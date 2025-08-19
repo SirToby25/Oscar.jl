@@ -331,13 +331,13 @@ Return the degree of the polynomial `p` in the `i`-th elementary variable with
 multiindex `jet`. If this jet variable is valid but still untracked, return $0$. Alternatively, the variable may be passed right away instead of its index.
 """
 function degree(apre::ActionPolyRingElem, i::Int, jet::Vector{Int})
+  __update_internals!(apre)
   apr = parent(apre)
   upr = __upr(apr)
   @req __is_valid_jet(apr, i, jet) "Invalid jet variable"
   jtv = __jtv(apr)
-  if haskey(jtv, (i,jet))
-    idx = findfirst(var -> var == data(jtv[(i,jet)]), gens(upr))
-    return degree(data(apre), gen(upr, idx))
+  if haskey(jtv, (i, jet))
+    return degree(data(apre), data(jtv[(i, jet)]))
   end
   return 0
 end
@@ -726,30 +726,6 @@ function diff_action(dpre::DifferentialPolyRingElem{T}, d::Vector{Int}) where {T
   return res
 end
 
-@doc"""
-    initial(p::ActionPolyRingElem)
-
-Return the initial of the polynomial `p`, i.e. the leading coefficient of `p` regarded as a univariate polynomial in its leader.
-"""
-function initial(apre::ActionPolyRingElem)
-  if is_constant(apre)
-    return apre
-  end
-  return divexact(leading_term(apre), leader(apre)^degree(apre, leader(apre)); check = true)
-end
-
-@doc raw"""
-    leader(p::ActionPolyRingElem)
-
-Return the leader of the polynomial `p`, that is the largest variable with respect to the ranking of `parent(p)`. If `p` is constant, an error is raised.
-"""
-function leader(apre::ActionPolyRingElem)
-  @req !is_constant(apre) "A constant polynomial has no leader"
-  if is_univariate(apre)
-    return vars(apre)[1]
-  end
-  return max(vars(apre)...)
-end
 ###############################################################################
 #
 #   Iterators
@@ -764,11 +740,11 @@ function coefficients(a::DifferentialPolyRingElem)
    return DifferentialPolyCoeffs(a)
 end
 
-function AbstractAlgebra.exponent_vectors(a::DifferencePolyRingElem)
+function exponents(a::DifferencePolyRingElem)
    return DifferencePolyExponentVectors(a)
 end
 
-function AbstractAlgebra.exponent_vectors(a::DifferentialPolyRingElem)
+function exponents(a::DifferentialPolyRingElem)
    return DifferentialPolyExponentVectors(a)
 end
 
