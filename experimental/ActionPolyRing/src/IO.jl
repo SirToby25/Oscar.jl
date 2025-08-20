@@ -73,6 +73,7 @@ function _expressify_monomial!(prod::Expr, x, e)
 end
 
 function expressify(a::ActionPolyRingElem, x = symbols(parent(a)); context = nothing)
+    __update_internals!(a)
     sum = Expr(:call, :+)
 
     for (c, e) in zip(coefficients(a), exponents(a))

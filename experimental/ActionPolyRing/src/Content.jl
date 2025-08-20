@@ -177,6 +177,8 @@ end
 
 (dpr::DifferencePolyRing)(upre::AbstractAlgebra.Generic.UniversalPolyRingElem) = DifferencePolyRingElem{elem_type(base_ring(dpr))}(dpr, upre)
 
+(dpr::DifferencePolyRing)(mpre::MPolyRingElem) = DifferencePolyRingElem{elem_type(base_ring(dpr))}(dpr, mpre)
+
 function (dpr::DifferencePolyRing{T})(a::DifferencePolyRingElem{T}) where {T}
   @req parent(a) === dpr "Wrong parent"
   return a
@@ -188,6 +190,8 @@ end
 (dpr::DifferentialPolyRing)() = DifferentialPolyRingElem{elem_type(base_ring(dpr))}(dpr)
 
 (dpr::DifferentialPolyRing)(upre::AbstractAlgebra.Generic.UniversalPolyRingElem) = DifferentialPolyRingElem{elem_type(base_ring(dpr))}(dpr, upre)
+
+(dpr::DifferentialPolyRing)(mpre::MPolyRingElem) = DifferentialPolyRingElem{elem_type(base_ring(dpr))}(dpr, mpre)
 
 function (dpr::DifferentialPolyRing{T})(a::DifferentialPolyRingElem{T}) where {T}
   @req parent(a) === dpr "Wrong parent"
@@ -309,11 +313,15 @@ term(apre::ActionPolyRingElem, i::Int) = parent(apre)(term(data(apre), __perm_fo
 
 is_monomial(apre::ActionPolyRingElem) = is_monomial(data(apre))
 
-is_term(apre::ActionPolyRingElem) = is_monomial(data(apre))
+is_term(apre::ActionPolyRingElem) = is_term(data(apre))
 
 is_univariate(apre::ActionPolyRingElem) = is_univariate(data(apre))
 
 is_univariate(apr::ActionPolyRing) = false
+
+to_univariate(R::PolyRing{T}, p::ActionPolyRingElem{T}) where {T <: RingElement} = to_univariate(R, data(p))
+
+to_univariate(p::ActionPolyRingElem) = to_univariate(data(p))
 
 length(apre::ActionPolyRingElem) = length(data(apre))
 
@@ -598,6 +606,31 @@ end
 Return the tail of `p` with respect to the ranking of the action polynomial ring containing it.
 """
 tail(apre::ActionPolyRingElem) = apre - leading_term(apre)
+
+@doc"""
+    initial(p::ActionPolyRingElem)
+
+Return the initial of the polynomial `p`, i.e. the leading coefficient of `p` regarded as a univariate polynomial in its leader.
+"""
+function initial(apre::ActionPolyRingElem)
+  if is_constant(apre)
+    return apre
+  end
+  return remove(leading_term(apre), leader(apre))[2]
+end
+
+@doc raw"""
+    leader(p::ActionPolyRingElem)
+
+Return the leader of the polynomial `p`, that is the largest variable with respect to the ranking of `parent(p)`. If `p` is constant, an error is raised.
+"""
+function leader(apre::ActionPolyRingElem)
+  @req !is_constant(apre) "A constant polynomial has no leader"
+  if is_univariate(apre)
+    return vars(apre)[1]
+  end
+  return max(vars(apre)...)
+end
 
 ###############################################################################
 #
