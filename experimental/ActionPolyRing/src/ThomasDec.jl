@@ -1,27 +1,8 @@
-@doc"""
-    initial(p::ActionPolyRingElem)
-
-Return the initial of the polynomial `p`, i.e. the leading coefficient of `p` regarded as a univariate polynomial in its leader.
-"""
-function initial(apre::ActionPolyRingElem)
-  if is_constant(apre)
-    return apre
-  end
-  return divexact(leading_term(apre), leader(apre)^degree(apre, leader(apre)); check = true)
-end
-
-@doc raw"""
-    leader(p::ActionPolyRingElem)
-
-Return the leader of the polynomial `p`, that is the largest variable with respect to the ranking of `parent(p)`. If `p` is constant, an error is raised.
-"""
-function leader(apre::ActionPolyRingElem)
-  @req !is_constant(apre) "A constant polynomial has no leader"
-  if is_univariate(apre)
-    return vars(apre)[1]
-  end
-  return max(vars(apre)...)
-end
+###############################################################################
+#
+#  Discriminant and its required methods
+#
+###############################################################################
 
 @doc raw"""
     resultant(f::ActionPolyRingElem, g::ActionPolyRingElem, v::ActionPolyRingElem)
@@ -96,3 +77,4 @@ function discriminant(p::ActionPolyRingElem)
   resul = resultant(p, derivative(p, ld), ld)
   return (-1)^(divexact(d*(d-1), 2)) * divexact(resul, initial(p))
 end
+
