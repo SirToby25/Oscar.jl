@@ -11,14 +11,12 @@ Return the resultant of `f` and `g` regarded as univariate polynomial in the jet
 """
 function resultant(apre1::ActionPolyRingElem{T}, apre2::ActionPolyRingElem{T}, var::ActionPolyRingElem{T}) where {T}
   check_parent(apre1, apre2) && check_parent(apre1, var)
-  __update_internals!(var)
   @req is_gen(var) "Not a variable"
   return resultant(apre1, apre2, __vtj(parent(var))[var])
 end
 
 function resultant(apre1::ActionPolyRingElem{T}, apre2::ActionPolyRingElem{T}, i::Int, idx::Vector{Int}) where {T}
   check_parent(apre1, apre2)
-  __update_internals!(apre1), __update_internals!(apre2)
   apr = parent(apre1)
   @req __is_valid_jet(apr, i, idx) "Invalid jet variable"
   jtv = __jtv(apr)
