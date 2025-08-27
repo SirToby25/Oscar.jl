@@ -21,7 +21,7 @@ function resultant(apre1::ActionPolyRingElem{T}, apre2::ActionPolyRingElem{T}, i
   @req __is_valid_jet(apr, i, idx) "Invalid jet variable"
   jtv = __jtv(apr)
   if haskey(jtv, (i, idx))
-    return apr(tmp_resultant(data(apre1), data(apre2), data(jtv[(i, idx)])))
+    return apr(resultant(data(apre1), data(apre2), data(jtv[(i, idx)])))
   end
   if is_zero(apre1) || is_zero(apre2)
     return zero(apr)
@@ -33,15 +33,6 @@ resultant(apre1::ActionPolyRingElem{T}, apre2::ActionPolyRingElem{T}, jet_idx::T
 
 resultant(apre1::ActionPolyRingElem{T}, apre2::ActionPolyRingElem{T}, i::Int) where {T} = resultant(apre1, apre2, gen(parent(apre1), i))
 
-#TODO: Remove once resultant is released in Hecke
-function tmp_resultant(f::UniversalPolyRingElem, g::UniversalPolyRingElem, x::UniversalPolyRingElem)
-  check_parent(f, g) && check_parent(f, x)
-  up = parent(x)
-  @req is_gen(x) "Not a variable in the universal polynomial ring"
-  res = resultant(data(f), data(g), findfirst(==(x), gens(up)))
-  return up(collect(coefficients(res)), collect(exponents(res)))
-end
-
 @doc raw"""
     discriminant(p::ActionPolyRingElem)
 
@@ -51,5 +42,6 @@ function discriminant(p::ActionPolyRingElem)
   ld = leader(p)
   d = degree(p, ld)
   resul = resultant(p, derivative(p, ld), ld)
-  return (-1)^(divexact(d*(d-1), 2)) * divexact(resul, initial(p))
+  return (-1)^(divexact(d * (d - 1), 2)) * divexact(resul, initial(p))
 end
+
