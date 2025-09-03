@@ -60,6 +60,9 @@ abstract type ActionPolyRingElem{T} <: RingElem end
  #      return a
  #    end
  #
+ #    algebraic_system(R::MyActionPolyRing) -> AlgebraicActionPolySystem{MyActionPolyRing}
+ #    algebraic_system(eqs::Vector{MyActionPolyRingElem}, ineqs::Vector{MyActionPolyRingElem}) -> AlgebraicActionPolySystem{MyActionPolyRing}
+ #
 
 ### Difference ###
 mutable struct DifferencePolyRing{T} <: ActionPolyRing{T}
@@ -199,8 +202,33 @@ mutable struct ActionPolyRingRanking{PolyT <: ActionPolyRing}
   index_ordering_matrix::ZZMatrix
   riquier_matrix::ZZMatrix
 
-  function ActionPolyRingRanking{PolyT}(dpr::PolyT, partition::Vector{Vector{Int}}, index_ordering_matrix::ZZMatrix) where {T, PolyT <: ActionPolyRing{T}}
-    return new{PolyT}(dpr, partition, index_ordering_matrix)
+  function ActionPolyRingRanking{PolyT}(S::PolyT, partition::Vector{Vector{Int}}, index_ordering_matrix::ZZMatrix) where {T, PolyT <: ActionPolyRing{T}}
+    return new{PolyT}(S, partition, index_ordering_matrix)
   end
   
+end
+
+###############################################################################
+#
+#  Algebraic systems
+#
+###############################################################################
+
+# An algebraic system S is a set of algebraic equations and inequations. Thus, it can be expressed in the normalised form
+# S = {p_i == 0, q_j != 0 | i in I, j in J} where I and J are some index sets and the p_i and q_i are polynomials, more specifically, ActionPolyRingElems
+# in our case.
+
+mutable struct AlgebraicActionPolySystem{PolyT <: ActionPolyRing}
+  ring::PolyT
+  eqs::Any #Always of type elem_type(PolyT)
+  ineqs::Any #Always of type elem_type(PolyT)
+
+  function AlgebraicActionPolySystem{PolyT}(S::PolyT) where {T, PolyT <: ActionPolyRing{T}}
+    return new{PolyT}(S, elem_type(PolyT)[], elem_type(PolyT)[])
+  end
+
+  function AlgebraicActionPolySystem{PolyT}(S::PolyT, eqs, ineqs) where {T, PolyT <: ActionPolyRing{T}}
+    return new{PolyT}(S, eqs, ineqs)
+  end
+
 end

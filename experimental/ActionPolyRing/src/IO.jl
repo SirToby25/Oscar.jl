@@ -170,3 +170,32 @@ function Base.show(io::IO, ran::ActionPolyRingRanking)
   end
 end
 
+###############################################################################
+#
+#  Algebraic systems 
+#
+###############################################################################
+
+function Base.show(io::IO, ::MIME"text/plain", sys::AlgebraicActionPolySystem)
+  io = pretty(io)
+  eq_sys = equations(sys)
+  n_eq = length(eq_sys)
+  ineq_sys = inequations(sys)
+  n_ineq = length(ineq_sys)
+  print(io, "Algebraic system over ", Lowercase(), parent(sys))
+  print(io, "\nwith $n_eq ", n_eq == 1 ? "equation:\n" : "equations:\n")
+  if n_eq > 0
+    print(io, Indent())
+    print(io, join(eq_sys, " == 0,\n"))
+    print(io, " == 0")
+    print(io, Dedent())
+  end
+  print(io, "\n\nand $n_ineq ", n_ineq == 1 ? "inequation:\n" : "inequations:\n")
+  if n_ineq > 0
+    print(io, Indent())
+    print(io, join(ineq_sys, " != 0,\n"))
+    print(io, " != 0")
+    print(io, Dedent())
+  end
+end
+
