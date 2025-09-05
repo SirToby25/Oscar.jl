@@ -6,6 +6,8 @@ export DifferencePolyRing
 export DifferencePolyRingElem
 export DifferentialPolyRing
 export DifferentialPolyRingElem
+export add_equations!
+export add_inequations!
 export algebraic_system
 export diff_action
 export difference_polynomial_ring
@@ -14,12 +16,17 @@ export elementary_symbols
 export equations
 export index_ordering_matrix
 export inequations
+export is_simple
 export leader
 export ndiffs
 export n_elementary_symbols
 export partition
 export ranking
+export remove_equations!
+export remove_inequations!
 export riquier_matrix
+export set_equations!
+export set_inequations!
 export set_ranking!
 export trailing_monomial
 export trailing_term

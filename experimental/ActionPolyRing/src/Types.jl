@@ -60,9 +60,6 @@ abstract type ActionPolyRingElem{T} <: RingElem end
  #      return a
  #    end
  #
- #    algebraic_system(R::MyActionPolyRing) -> AlgebraicActionPolySystem{MyActionPolyRing}
- #    algebraic_system(eqs::Vector{MyActionPolyRingElem}, ineqs::Vector{MyActionPolyRingElem}) -> AlgebraicActionPolySystem{MyActionPolyRing}
- #
 
 ### Difference ###
 mutable struct DifferencePolyRing{T} <: ActionPolyRing{T}
@@ -220,15 +217,16 @@ end
 
 mutable struct AlgebraicActionPolySystem{PolyT <: ActionPolyRing}
   ring::PolyT
-  eqs::Any #Always of type elem_type(PolyT)
-  ineqs::Any #Always of type elem_type(PolyT)
+  eqs_and_ineqs::Any #Always of type Vector{Tuple{elem_type(PolyT), Bool}} where true represents equations and false represents inequations
+  eq_idxs::Vector{Int}
+  ineq_idxs::Vector{Int}
 
   function AlgebraicActionPolySystem{PolyT}(S::PolyT) where {T, PolyT <: ActionPolyRing{T}}
-    return new{PolyT}(S, elem_type(PolyT)[], elem_type(PolyT)[])
+    return new{PolyT}(S, elem_type(PolyT)[], Int[], Int[])
   end
 
-  function AlgebraicActionPolySystem{PolyT}(S::PolyT, eqs, ineqs) where {T, PolyT <: ActionPolyRing{T}}
-    return new{PolyT}(S, eqs, ineqs)
+  function AlgebraicActionPolySystem{PolyT}(S::PolyT, eqs_and_ineqs, eq_idxs::Vector{Int}, ineq_idxs) where {T, PolyT <: ActionPolyRing{T}}
+    return new{PolyT}(S, eqs_and_ineqs, eq_idxs, ineq_idxs)
   end
 
 end

@@ -1121,7 +1121,7 @@ end
 ###############################################################################
 
 ### Difference ###
-base_ring(ran::ActionPolyRingRanking) = ran.ring
+parent(ran::ActionPolyRingRanking) = ran.ring
 
 @doc raw"""
     partition(r::ActionPolyRingRanking) -> Vector{Vector{Int}}
@@ -1147,7 +1147,7 @@ Return a Riquier matrix that induces the ranking `r` of the action polynomial ri
 function riquier_matrix(ran::ActionPolyRingRanking)
   if !isdefined(ran, :riquier_matrix)
     par = partition(ran)
-    dpr = base_ring(ran)
+    dpr = parent(ran)
     upper_part = block_diagonal_matrix([matrix(ZZ, length(par)-1, n_elementary_symbols(dpr), vcat(par[1:end-1]...)), index_ordering_matrix(ran)])
     lower_part = block_diagonal_matrix([__in_block_tie_breaking_matrix(par), zero_matrix(ZZ, 0, ndiffs(dpr))])
     ran.riquier_matrix = vcat(upper_part, lower_part)
