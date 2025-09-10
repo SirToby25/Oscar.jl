@@ -57,8 +57,8 @@ end
 # 2: Construct the Weierstrass polynomial
 ################################################################
 
-function _weierstrass_sections(base::NormalToricVariety)
-  return [generic_section(anticanonical_bundle(base)^4), generic_section(anticanonical_bundle(base)^6)]
+function _weierstrass_sections(base::NormalToricVariety; rng::AbstractRNG = Random.default_rng())
+  return [generic_section(anticanonical_bundle(base)^4; rng), generic_section(anticanonical_bundle(base)^6; rng)]
 end
 
 function _weierstrass_polynomial(base::NormalToricVariety, S::MPolyRing)
@@ -77,12 +77,12 @@ end
 # 3: Construct the Tate polynomial
 ################################################################
 
-function _tate_sections(base::NormalToricVariety)
-  a1 = generic_section(anticanonical_bundle(base))
-  a2 = generic_section(anticanonical_bundle(base)^2)
-  a3 = generic_section(anticanonical_bundle(base)^3)
-  a4 = generic_section(anticanonical_bundle(base)^4)
-  a6 = generic_section(anticanonical_bundle(base)^6)
+function _tate_sections(base::NormalToricVariety; rng::AbstractRNG = Random.default_rng())
+  a1 = generic_section(anticanonical_bundle(base); rng)
+  a2 = generic_section(anticanonical_bundle(base)^2; rng)
+  a3 = generic_section(anticanonical_bundle(base)^3; rng)
+  a4 = generic_section(anticanonical_bundle(base)^4; rng)
+  a6 = generic_section(anticanonical_bundle(base)^6; rng)
   return [a1, a2, a3, a4, a6]
 end
 
@@ -169,8 +169,8 @@ function _kodaira_type(id::MPolyIdeal{<:MPolyRingElem}, ords::Tuple{Int64, Int64
 
       # Choose explicit sections for all parameters of the model,
       # and then put the model over the concrete base using these data
-      concrete_data = merge(Dict(string(base_coords_symbols[i]) => generic_section(KBar^grading[1, i] * prod(hyperplane_bundle^grading[j, i] for j in 2:length(grading[:, 1]))) for i in eachindex(base_coords_symbols)), Dict("base" => concrete_base))
-      w = put_over_concrete_base(w, concrete_data)
+      concrete_data = merge(Dict(string(base_coords_symbols[i]) => generic_section(KBar^grading[1, i] * prod(hyperplane_bundle^grading[j, i] for j in 2:length(grading[:, 1])); rng) for i in eachindex(base_coords_symbols)), Dict("base" => concrete_base))
+      w = put_over_concrete_base(w, concrete_data; rng)
 
       # We also need to determine the gauge locus over the new base
       # by using the explicit forms of all of the sections chosen above
@@ -267,8 +267,7 @@ end
 
 function _construct_generic_sample(base_grading::Matrix{Int64}, base_vars::Vector{String}, d::Int, fiber_ambient_space::NormalToricVariety, fiber_twist_divisor_classes::ZZMatrix)
   base_space = family_of_spaces(polynomial_ring(QQ, base_vars, cached = false)[1], base_grading, d)
-  ambient_space_vars = vcat(base_vars, coordinate_names(fiber_ambient_space))
-  coordinate_ring_ambient_space = polynomial_ring(QQ, ambient_space_vars, cached = false)[1]
+  coordinate_ring_ambient_space, _ = polynomial_ring(QQ, base_vars, coordinate_names(fiber_ambient_space); cached=false)
   w = Matrix{Int64}(reduce(vcat, [k.coeff for k in coordinate_ring(fiber_ambient_space).d]))
   z_block = zeros(Int64, ncols(w), ncols(base_grading))
   D_block = hcat([[Int(fiber_twist_divisor_classes[k,l]) for k in 1:nrows(fiber_twist_divisor_classes)] for l in 1:ncols(fiber_twist_divisor_classes)]...)
