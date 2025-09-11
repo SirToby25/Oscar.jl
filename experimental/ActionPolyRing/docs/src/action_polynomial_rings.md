@@ -4,7 +4,11 @@ CollapsedDocStrings = true
 DocTestSetup = Oscar.doctestsetup()
 ```
 
+<<<<<<< HEAD
 # [Action polynomial rings](@id actionpolyring)
+=======
+# Action polynomial rings
+>>>>>>> 7514c7a95d (documentation for APR)
 
 An *action polynomial ring* over the commutative ring ``R`` is a polynomial ring
 ```math
@@ -21,9 +25,16 @@ e.g. it is multiplicative for difference polynomial rings and it is a derivation
 polynomial rings.
 
 ---
+<<<<<<< HEAD
 In Oscar we provide the action polynomial interface via the abstract types `ActionPolyRing{T} <: Ring`
 and `ActionPolyRingElem{T} <: RingElem`. The type parameter `T` is the element type of the coefficient
 ring. All concrete subtypes use the functionality of [universal polynomials](@ref "Universal polynomial")
+=======
+
+In Oscar we provide the action polynomial interface via the abstract types `ActionPolyRing{T} <: Ring`
+and `ActionPolyRingElem{T} <: RingElem`. The type parameter `T` is the element type of the coefficient
+ring. All concrete subtypes use the functionality of [universal polynomials](@ref "Universal Polynomial")
+>>>>>>> 7514c7a95d (documentation for APR)
 from the AbstractAlgebra package for polynomial arithmetic, as well as maintaining variables and adding
 new ones on demand. Any action polynomial ring maintains a sorted list of currently tracked jet variables,
 that can be accessed and extended by a number of methods, see, e.g., [Element Constructors](@ref). The jet
@@ -33,7 +44,11 @@ variables are sorted with respect to a user-defined [ranking](@ref actionpolyran
     The set of valid jet variables of an action polynomial ring depend only on the integers ``m`` and
     ``n`` and are thus known at the time of construction. For reasons of efficiency, we keep the list of
     tracked jet variables as short as possible and track jet variables only, if necessary. The list of
+<<<<<<< HEAD
     currently tracked jet variables is obtained using
+=======
+    currently tracked jet variables is obtained, using
+>>>>>>> 7514c7a95d (documentation for APR)
     [`gens`](@ref gens(apr::ActionPolyRing)).
 
 Currently, there are two concrete subtypes available, namely `DifferencePolyRing{T}` and
@@ -59,7 +74,11 @@ which can be found below. The first two do not require the jet variable in quest
 
 ## [Element Constructors](@id element_constructors_apr)
 
+<<<<<<< HEAD
 `(A::ActionPolyRing)()` returns the zero polynomial of the action polynomial ring `A`.
+=======
+`(A::ActionPolyRing)()` returns the zero polynomial of the action polynomial ring `A`.\
+>>>>>>> 7514c7a95d (documentation for APR)
 `(A::ActionPolyRing)(a::T) where {T<:RingElement}` returns `a` as an element of `A`, if possible.
 This can be used for creating constant polynomials.
 
@@ -74,7 +93,11 @@ gens(A::ActionPolyRing, jet_idxs::Vector{Tuple{Int, Vector{Int}}})
 ```
 
 !!! note "Creating polynomials"
+<<<<<<< HEAD
     Polynomials can be created by applying the usual arithmetic operations, such as `+`, `-`, `*`, and `^`,
+=======
+    Polynomials can be created using by applying the usual arithmetic operations, such as `+`, `-`, `*`, `^`
+>>>>>>> 7514c7a95d (documentation for APR)
     to jet variables.
 
 ## [Generators and variables](@id generators_and_variables_apr)
@@ -90,6 +113,7 @@ leader(p::ActionPolyRingElem)
 
 We also provide the usual `ngens` and `nvars` methods that respectively return the number of currently tracked jet variables.
 
+<<<<<<< HEAD
 ## [Basic methods for action polynomial rings](@id basic_functionality_apr)
 
 ```@docs
@@ -100,6 +124,8 @@ elementary_symbols(A::DifferencePolyRing)
 n_action_maps(A::DifferencePolyRing)
 ```
 
+=======
+>>>>>>> 7514c7a95d (documentation for APR)
 ## [Iterators](@id iterators_apr)
 
 The following iterators are available for elements of action polynomial rings. The entries across the different iterators are
@@ -156,7 +182,11 @@ tail(p::ActionPolyRingElem)
 ```
 
 ## [Miscellaneous](@id miscellaneous_apr)
+<<<<<<< HEAD
 In this subsection, we enumerate methods that might be useful but primarily exists, because they already do
+=======
+In this subsection we enumerate methods that might be useful but primarily exists, because they already do
+>>>>>>> 7514c7a95d (documentation for APR)
 for other polynomial types.
 
 ### Constant polynomials
@@ -215,4 +245,3 @@ to_univariate(R::PolyRing{T}, p::ActionPolyRingElem{T}) where {T <: RingElement}
 to_univariate(p::ActionPolyRingElem)
 univariate_coefficients(p::ActionPolyRingElem, i::Int, jet::Vector{Int})
 ```
-

@@ -600,7 +600,7 @@ end
 @doc raw"""
     tail(p::ActionPolyRingElem)
 
-Return the tail of `p`, i.e. `p`, i.e. return `p` without its leading term with respect to the ranking of the action polynomial ring containing it.
+Return the tail of `p`, i.e. return `p` without its leading term with respect to the ranking of the action polynomial ring containing it.
 """
 tail(apre::ActionPolyRingElem) = apre - leading_term(apre)
 
