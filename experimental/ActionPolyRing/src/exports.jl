@@ -18,7 +18,7 @@ export index_ordering_matrix
 export inequations
 export is_simple
 export leader
-export ndiffs
+export n_action_maps
 export n_elementary_symbols
 export partition
 export ranking
