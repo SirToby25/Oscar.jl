@@ -180,6 +180,13 @@ total_degree(p::ActionPolyRingElem)
 derivative(p::ActionPolyRingElem, i::Int, jet::Vector{Int})
 ```
 
+### [Discriminant and resultant](@id discriminant_resultant_apr)
+
+```@docs
+discriminant(p::ActionPolyRingElem)
+resultant(f::ActionPolyRingElem, g::ActionPolyRingElem, i::Int, jet::Vector{Int})
+```
+
 ### Univariate polynomials
 
 ```@docs
@@ -187,5 +194,6 @@ is_univariate(A::ActionPolyRing)
 is_univariate(p::ActionPolyRingElem)
 to_univariate(R::PolyRing{T}, p::ActionPolyRingElem{T}) where {T <: RingElement}
 to_univariate(p::ActionPolyRingElem)
+univariate_coefficients(p::ActionPolyRingElem, i::Int, jet::Vector{Int})
 ```
 
