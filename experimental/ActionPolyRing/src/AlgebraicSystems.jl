@@ -4,10 +4,21 @@
 #
 ###############################################################################
 
+@doc raw"""
+    algebraic_system(A::ActionPolyRing) -> AlgebraicActionPolySystem
+
+Return the empty algebraic system in the action polynomial ring `A`.
+"""
 function algebraic_system(S::PolyT) where {PolyT <: ActionPolyRing}
   return AlgebraicActionPolySystem{PolyT}(S)
 end
 
+@doc raw"""
+    algebraic_system(eqs::Vector{PolyT}, ineqs::Vector{PolyT}) where {PolyT <: ActionPolyRingElem} -> AlgebraicActionPolySystem
+
+Return the algebraic systems with left-hand-side of equations defined by `eqs` and left-hand-side of inequations defined by
+`ineqs`. If not all polynomials are contained in the same action polynomial ring, an error is raised.
+"""
 function algebraic_system(eqs::Vector{PolyT}, ineqs::Vector{PolyT}) where {PolyT <: ActionPolyRingElem}
   le = length(eqs)
   li = length(ineqs)
@@ -51,7 +62,18 @@ __eqs_and_ineqs(sys::AlgebraicActionPolySystem{PolyT}) where {PolyT <: ActionPol
 __eq_idxs(sys::AlgebraicActionPolySystem) = sys.eq_idxs
 __ineq_idxs(sys::AlgebraicActionPolySystem) = sys.ineq_idxs
 
+@doc raw"""
+    equations(sys::AlgebraicActionPolySystem) -> Vector{ActionPolyRingElem}
+
+Return the left-hand-sides of equations of the algebraic system `sys` as a vector of polynomials.
+"""
 equations(sys::AlgebraicActionPolySystem) = [__eqs_and_ineqs(sys)[i][1] for i in __eq_idxs(sys)]
+
+@doc raw"""
+    inequations(sys::AlgebraicActionPolySystem) -> Vector{ActionPolyRingElem}
+
+Return the left-hand-sides of inequations of the algebraic system `sys` as a vector of polynomials.
+"""
 inequations(sys::AlgebraicActionPolySystem) = [__eqs_and_ineqs(sys)[i][1] for i in __ineq_idxs(sys)]
 
 function set_equations!(sys::AlgebraicActionPolySystem, eqs::Vector{PolyT}) where {PolyT <: ActionPolyRingElem}

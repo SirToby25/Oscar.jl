@@ -4,24 +4,25 @@
 #
 ###############################################################################
 
-@doc raw"""
-    resultant(f::ActionPolyRingElem, g::ActionPolyRingElem, v::ActionPolyRingElem)
-
-Return the resultant of `f` and `g` regarded as univariate polynomial in the jet variable `v`. The jet variable can also be specified its jet index or its position in `gens(parent(f))`.
-"""
 function resultant(r1::ActionPolyRingElem, r2::ActionPolyRingElem, var::ActionPolyRingElem)
   check_parent(r1, r2) && check_parent(r1, var)
-  @req is_gen(var) "Not a variable"
+  @req is_gen(var) "Not a jet variable"
   return resultant(r1, r2, __vtj(parent(var))[var])
 end
 
-function resultant(r1::ActionPolyRingElem, r2::ActionPolyRingElem, i::Int, idx::Vector{Int})
+@doc raw"""
+    resultant(f::ActionPolyRingElem, g::ActionPolyRingElem, i::Int, jet::Vector{Int})
+
+Return the resultant of `f` and `g` regarded as univariate polynomials in the jet variable specified by `i` and
+`jet`. This method allows all versions described in [Specifying jet variables](@ref specifying_jet_variables).
+"""
+function resultant(r1::ActionPolyRingElem, r2::ActionPolyRingElem, i::Int, jet::Vector{Int})
   check_parent(r1, r2)
   S = parent(r1)
-  @req __is_valid_jet(S, i, idx) "Invalid jet variable"
+  @req __is_valid_jet(S, i, jet) "Invalid jet variable"
   jtv = __jtv(S)
-  if haskey(jtv, (i, idx))
-    return S(resultant(data(r1), data(r2), data(jtv[(i, idx)])))
+  if haskey(jtv, (i, jet))
+    return S(resultant(data(r1), data(r2), data(jtv[(i, jet)])))
   end
   if is_zero(r1) || is_zero(r2)
     return zero(S)
@@ -50,24 +51,26 @@ end
 #
 ###############################################################################
 
-@doc raw"""
-    univariate_coefficients(p::ActionPolyRingElem, i::var::ActionPolyRingElem) 
-
-Return the coefficient vector of `p` regarded as a univariate polynomial in the variable `var`, leading with the constant coefficient.
-"""
 function univariate_coefficients(r::ActionPolyRingElem, var::ActionPolyRingElem)
   check_parent(r, var)
-  @req is_gen(var) "Not a variable"
+  @req is_gen(var) "Not a jet variable"
   return univariate_coefficients(r, __vtj(parent(var))[var])
 end
   
-function univariate_coefficients(r::ActionPolyRingElem, i::Int, idx::Vector{Int})
-  d = degree(r, i, idx)
+@doc raw"""
+    univariate_coefficients(p::ActionPolyRingElem, i::Int, jet::Vector{Int}) 
+
+Return the coefficient vector of `p` regarded as a univariate polynomial in the jet variable specified by `i` and
+`jet`, leading with the constant coefficient. This method allows all versions described in
+[Specifying jet variables](@ref specifying_jet_variables).
+"""
+function univariate_coefficients(r::ActionPolyRingElem, i::Int, jet::Vector{Int})
+  d = degree(r, i, jet)
   if d == 0
     return [r]
   end
   res = [zero(r) for _ in 1:d+1]
-  var = __jtv(parent(r))[(i, idx)]
+  var = __jtv(parent(r))[(i, jet)]
   v_idx = var_index(var)
   for (t, e) in zip(terms(r), exponents(r)) 
     @inbounds res[e[v_idx] + 1] += remove(t, var)[2]
@@ -131,7 +134,6 @@ function is_reduced(r::PolyT, g::PolyT) where {PolyT <: ActionPolyRingElem}
   ld = leader(g)
   return degree(r, ld) < degree(g, ld)
 end
-
 
 @doc raw"""
     is_reduced(r::ActionPolyRingElem, G::Vector{ActionPolyRingElem})
