@@ -80,8 +80,13 @@ function get_oscar_serialization_version()
     return oscar_serialization_version[]
   end
   if Oscar.is_dev
+    next_version = "$(VERSION_NUMBER.major).$(VERSION_NUMBER.minor).$(VERSION_NUMBER.patch)"
+    n_upgrades = count(x -> startswith(x, next_version) && endswith(x, ".jl"),
+                       readdir(joinpath(@__DIR__, "Upgrades")))
+
+
     commit_hash = get(Oscar._get_oscar_git_info(), :commit, "unknown")
-    version_info = "$VERSION_NUMBER-$commit_hash"
+    version_info = iszero(n_upgrades) ? "$VERSION_NUMBER-$commit_hash" : "$VERSION_NUMBER-$n_upgrades-$commit_hash"
     result = Dict{Symbol, Any}(
       :Oscar => ["https://github.com/oscar-system/Oscar.jl", version_info]
     )
@@ -612,6 +617,7 @@ include("LieTheory.jl")
 
 include("Upgrades/main.jl")
 include("parallel.jl")
+
 
 ################################################################################
 # Interacting with IO streams and files
