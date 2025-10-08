@@ -39,10 +39,17 @@ resultant(r1::ActionPolyRingElem, r2::ActionPolyRingElem, i::Int) = resultant(r1
 Return the discriminant of `p`.
 """
 function discriminant(p::ActionPolyRingElem)
+  if is_constant(p)
+    return zero(parent(p))
+  end
+
   ld = leader(p)
-  d = degree(p, ld)
-  resul = resultant(p, derivative(p, ld), ld)
-  return (-1)^(divexact(d * (d - 1), 2)) * divexact(resul, initial(p))
+  
+  if degree(p, ld) % 4 in [0,1]
+    return divexact(resultant(p, derivative(p, ld), ld), initial(p))
+  end
+  
+  return -divexact(resultant(p, derivative(p, ld), ld), initial(p))
 end
 
 ###############################################################################
@@ -108,11 +115,12 @@ evaluate(a::ActionPolyRingElem{T}, A::Vector{V}) where {T <: RingElement, V <: R
 
 # Partial substitutions
 function evaluate(a::ActionPolyRingElem{T}, vars::Vector{Int}, vals::Vector{V}) where {T <: RingElement, V <: RingElement}
-  per = __perm_for_sort(parent(a))
-  return evaluate(data(a), map(x -> per[x], vars), vals)
+    S = parent(a)
+  per = __perm_for_sort(S)
+  return S(evaluate(data(a), map(x -> per[x], vars), vals))
 end
 
-evaluate(a::PolyT, vars::Vector{PolyT}, vals::Vector{V}) where {PolyT <: ActionPolyRingElem, V <: RingElement} = evaluate(a, [var_index(x) for x in vars], vals)
+evaluate(a::PolyT, vars::Vector{PolyT}, vals::Vector{V}) where {PolyT <: ActionPolyRingElem, V <: RingElement} = parent(a)(evaluate(a, [var_index(x) for x in vars], vals))
 
 ###############################################################################
 #
