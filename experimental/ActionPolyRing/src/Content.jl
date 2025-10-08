@@ -952,8 +952,15 @@ end
 
 # Full substitutions with zero padding
 evaluate(a::ActionPolyRingElem{T}, A::Vector{T}) where {T <: RingElement} = evaluate(data(a), __permute_vals(parent(a), A))
-evaluate(a::ActionPolyRingElem{T}, A::Vector{V}) where {T <: RingElement, V <: Union{Integer, Rational, AbstractFloat}} = evaluate(data(a), __permute_vals(parent(a), A))
-evaluate(a::ActionPolyRingElem{T}, A::Vector{V}) where {T <: RingElement, V <: RingElement} = evaluate(data(a), __permute_vals(parent(a), A))
+
+@doc raw"""
+    evaluate(a::ActionPolyRingElem{T}, vals::Vector{V}) where {T <: RingElement, V <: Ringelement}
+
+Evaluate the polynomial expression by substituting in the supplied values in the array `vals` for each of the
+tracked jet variables. The evaluation will succeed if multiplication is defined between elements of the
+coefficient ring of `a` and elements of `vals`.
+"""
+evaluate(a::ActionPolyRingElem{T}, vals::Vector{V}) where {T <: RingElement, V <: RingElement} = evaluate(data(a), __permute_vals(parent(a), vals))
 
 (a::ActionPolyRingElem{T})() where {T <: RingElement} = evaluate(a, T[])
 (a::ActionPolyRingElem{T})(vals::T...) where {T <: RingElement} = evaluate(a, collect(vals))
@@ -961,12 +968,28 @@ evaluate(a::ActionPolyRingElem{T}, A::Vector{V}) where {T <: RingElement, V <: R
 (a::ActionPolyRingElem{T})(vals::Union{NCRingElem, RingElement}...) where {T <: RingElement} = evaluate(a, collect(vals))
 
 # Partial substitutions
+@doc raw"""
+    evaluate(a::ActionPolyRingElem{T}, vars::Vector{Int}, vals::Vector{V}) where {T <: RingElement, V <: Ringelement}
+
+Evaluate the polynomial expression by substituting in the supplied values in the array `vals` for
+the corresponding jet variables specified by the indices given by the array `vars`; see
+[Specifying jet variables](@ref specifying_jet_variables). The evaluation will succeed if
+multiplication is defined between elements of the coefficient ring of `a` and elements of `vals`.
+"""
 function evaluate(a::ActionPolyRingElem{T}, vars::Vector{Int}, vals::Vector{V}) where {T <: RingElement, V <: RingElement}
     S = parent(a)
   per = __perm_for_sort(S)
   return S(evaluate(data(a), map(x -> per[x], vars), vals))
 end
 
+@doc raw"""
+    evaluate(a::PolyT, vars::Vector{PolyT}, vals::Vector{V}) where {PolyT <: ActionPolyRingElem, V <: Ringelement}
+
+Evaluate the polynomial expression by substituting in the supplied values in the array `vals` for
+the corresponding jet variables from the vector `vars`; see
+[Specifying jet variables](@ref specifying_jet_variables). The evaluation will succeed if
+multiplication is defined between elements of the coefficient ring of `a` and elements of `vals`.
+"""
 evaluate(a::PolyT, vars::Vector{PolyT}, vals::Vector{V}) where {PolyT <: ActionPolyRingElem, V <: RingElement} = parent(a)(evaluate(a, [var_index(x) for x in vars], vals))
 
 ###############################################################################
