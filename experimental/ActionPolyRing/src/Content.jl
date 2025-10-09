@@ -891,7 +891,7 @@ to_univariate(R::PolyRing{T}, apre::ActionPolyRingElem{T}) where {T <: RingEleme
     to_univariate(p::ActionPolyRingElem)
 
 Assuming the polynomial `p` is actually a univariate polynomial in the jet variable `x`, convert the polynomial to a univariate
-polynomial in a univariate polynomial ring over the same base ring in the variable `x`. If `p` is constant, it is considered
+polynomial in a univariate polynomial ring over the same coefficient ring in the variable `x`. If `p` is constant, it is considered
 to be a polynomial in the largest tracked jet variable of its parent. An exception is raised if the polynomial `p` involves
 more than one jet variable.
 """
@@ -903,7 +903,7 @@ function to_univariate(apre::ActionPolyRingElem)
   end
   apr = parent(apre)
   x = symbols(apr)[var]
-  R, _ = base_ring(apr)[x]
+  R, _ = coefficient_ring(apr)[x]
   return to_univariate(R, apre)
 end
 
