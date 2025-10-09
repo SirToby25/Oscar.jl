@@ -47,9 +47,11 @@ end
 #
 ###############################################################################
 
-parent_type(::Type{AlgebraicActionPolySystem{PolyT}}) where {PolyT <: ActionPolyRing} = PolyT
 base_ring(sys::AlgebraicActionPolySystem) = base_ring(parent(sys))
 base_ring_type(::Type{AlgebraicActionPolySystem{PolyT}}) where {PolyT <: ActionPolyRing} = base_ring_type(PolyT)
+coefficient_ring(sys::AlgebraicActionPolySystem) = coefficient_ring(base_ring(sys))
+coefficient_ring_type(::Type{AlgebraicActionPolySystem{PolyT}}) where {PolyT <: ActionPolyRing} = coefficient_ring_type(PolyT)
+parent_type(::Type{AlgebraicActionPolySystem{PolyT}}) where {PolyT <: ActionPolyRing} = PolyT
 
 ###############################################################################
 #
@@ -185,5 +187,5 @@ function is_simple(sys::AlgebraicActionPolySystem)
     !is_constant(ineq) || return false
   end
   !allunique([leader(x[1]) for x in __eqs_and_ineqs(sys)]) || return false
-
 end
+
