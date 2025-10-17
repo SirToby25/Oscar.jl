@@ -64,15 +64,13 @@ function __expressify_coeff_monomial!(coeff_prod::Expr, x, e, ld_ind)
       push!(coeff_prod.args, Expr(:call, :^, x[i], e[i]))
     elseif e[i] == 1
       push!(coeff_prod.args, x[i])
-    end 
-  end 
+    end
+  end
 end
 
 function expressify(a::ActionPolyRingElem, x = symbols(parent(a)); context = nothing)
   es = exponents(a)
-  if length(es) == 0
-    return Expr(:call, :+)
-  end
+  length(es) == 0 && return Expr(:call, :+)
 
   # Find index and highest exponent of the leader of a
   ld_ind, cur_exp = (0, 0)
