@@ -243,7 +243,6 @@ Return the elementary symbols of the action polynomial ring `A` as a vector.
 """
 elementary_symbols(dpr::Union{DifferencePolyRing, DifferentialPolyRing}) = dpr.elementary_symbols
 
-
 @doc raw"""
     n_action_maps(A::ActionPolyRing) -> Int
 
@@ -641,6 +640,24 @@ derivative(apre::ActionPolyRingElem, i::Int) = derivative(apre, gen(parent(apre)
     diff_action(p::DifferencePolyRingElem, i::Int)
 
 Apply the `i`-th endomorphism to the polynomial `p`.
+
+# Examples
+
+```jldoctests
+julia> dpr, (a,b,c) = difference_polynomial_ring(ZZ, [:a, :b, :c], 2); f = -2*a*b + 3*a*b^2;
+
+julia> diff_action(3*a, 1)
+3*a[1,0]
+
+julia> diff_action(3*a, 2)
+3*a[0,1]
+
+julia> diff_action(f, 1)
+(3*b[1,0]^2 - 2*b[1,0])*a[1,0]
+
+julia> diff_action(f, 2)
+(3*b[0,1]^2 - 2*b[0,1])*a[0,1]
+```
 """
 function diff_action(dpre::DifferencePolyRingElem{T}, i::Int) where {T}
   dpr = parent(dpre)
@@ -654,6 +671,24 @@ end
     diff_action(p::DifferentialPolyRingElem, i::Int)
 
 Apply the `i`-th derivation to the polynomial `p`.
+
+# Examples
+
+```jldoctests
+julia> dpr, (a,b,c) = differential_polynomial_ring(ZZ, [:a, :b, :c], 2); f = -2*a*b + 3*a*b^2;
+
+julia> diff_action(3*a, 1)
+3*a[1,0]
+
+julia> diff_action(3*a, 2)
+3*a[0,1]
+
+julia> diff_action(f, 1)
+(3*b[0,0]^2 - 2*b[0,0])*a[1,0] + 6*b[1,0]*a[0,0]*b[0,0] - 2*b[1,0]*a[0,0]
+
+julia> diff_action(f, 2)
+(3*b[0,0]^2 - 2*b[0,0])*a[0,1] + 6*b[0,1]*a[0,0]*b[0,0] - 2*b[0,1]*a[0,0]
+```
 """
 function diff_action(dpre::DifferentialPolyRingElem{T}, i::Int) where {T}
   dpr = parent(dpre)
@@ -838,13 +873,11 @@ resultant(r1::ActionPolyRingElem, r2::ActionPolyRingElem, i::Int) = resultant(r1
 Return the discriminant of `p`.
 """
 function discriminant(p::ActionPolyRingElem)
-  if is_constant(p)
-    return zero(parent(p))
-  end
+  is_constant(p) && return zero(parent(p))
 
   ld = leader(p)
   
-  if degree(p, ld) % 4 in [0,1]
+  if degree(p, ld) % 4 in (0,1)
     return divexact(resultant(p, derivative(p, ld), ld), initial(p))
   end
   
@@ -866,17 +899,10 @@ is_univariate(apre::ActionPolyRingElem) = is_univariate(data(apre))
 
 function is_univariate_with_data(apre::ActionPolyRingElem)
   flag, gen_idx = is_univariate_with_data(data(apre))
-  if is_zero(gen_idx)
-    return (flag, gen_idx)
-  end
-  return (flag, findfirst(==(gen_idx), __perm_for_sort(parent(apre))))
+  is_zero(gen_idx) && return flag, gen_idx
+  return flag, findfirst(==(gen_idx), __perm_for_sort(parent(apre)))
 end
 
-@doc raw"""
-    is_univariate(p::ActionPolyRing)
-
-Return `false`, since an action polynomial ring cannot be univariate.
-"""
 is_univariate(apr::ActionPolyRing) = false
 
 @doc raw"""
@@ -922,9 +948,13 @@ Return the coefficient vector of `p` regarded as a univariate polynomial in the 
 """
 function univariate_coefficients(r::ActionPolyRingElem, i::Int, jet::Vector{Int})
   d = degree(r, i, jet)
+<<<<<<< HEAD
   if d == 0
     return [r]
   end
+=======
+  d == 0 && return [r]
+>>>>>>> master
   res = [zero(r) for _ in 1:d+1]
   var = __jtv(parent(r))[(i, jet)]
   v_idx = var_index(var)
@@ -979,7 +1009,11 @@ the corresponding jet variables specified by the indices given by the array `var
 multiplication is defined between elements of the coefficient ring of `a` and elements of `vals`.
 """
 function evaluate(a::ActionPolyRingElem{T}, vars::Vector{Int}, vals::Vector{V}) where {T <: RingElement, V <: RingElement}
+<<<<<<< HEAD
     S = parent(a)
+=======
+  S = parent(a)
+>>>>>>> master
   per = __perm_for_sort(S)
   return S(evaluate(data(a), map(x -> per[x], vars), vals))
 end
@@ -1011,7 +1045,7 @@ Return an iterator for the coefficients of `p` with respect to the ranking of th
 julia> dpr, (a,b,c) = difference_polynomial_ring(ZZ, [:a, :b, :c], 4; partition = [[0,1,1],[1,0,0]]); f = -2*a*b + a*c + 3*b^2;
 
 julia> cf = coefficients(f)
-Coefficients iterator of 3*b[0,0,0,0]^2 - 2*b[0,0,0,0]*a[0,0,0,0] + c[0,0,0,0]*a[0,0,0,0]
+Coefficients iterator of 3*b[0,0,0,0]^2 - 2*a[0,0,0,0]*b[0,0,0,0] + c[0,0,0,0]*a[0,0,0,0]
 
 julia> collect(cf)
 3-element Vector{ZZRingElem}:
@@ -1033,7 +1067,7 @@ Return an iterator for the exponents of `p` with respect to the ranking of the p
 julia> dpr, (a,b,c) = difference_polynomial_ring(ZZ, [:a, :b, :c], 4; partition = [[0,1,1],[1,0,0]]); f = -2*a*b + a*c + 3*b^2;
 
 julia> ef = exponents(f)
-Exponents iterator of 3*b[0,0,0,0]^2 - 2*b[0,0,0,0]*a[0,0,0,0] + c[0,0,0,0]*a[0,0,0,0]
+Exponents iterator of 3*b[0,0,0,0]^2 - 2*a[0,0,0,0]*b[0,0,0,0] + c[0,0,0,0]*a[0,0,0,0]
 
 julia> collect(ef)
 3-element Vector{Vector{Int64}}:
@@ -1055,13 +1089,13 @@ Return an iterator for the monomials of `p` with respect to the ranking of the p
 julia> dpr, (a,b,c) = difference_polynomial_ring(ZZ, [:a, :b, :c], 4; partition = [[0,1,1],[1,0,0]]); f = -2*a*b + a*c + 3*b^2;
 
 julia> mf = monomials(f)
-Monomials iterator of 3*b[0,0,0,0]^2 - 2*b[0,0,0,0]*a[0,0,0,0] + c[0,0,0,0]*a[0,0,0,0]
+Monomials iterator of 3*b[0,0,0,0]^2 - 2*a[0,0,0,0]*b[0,0,0,0] + c[0,0,0,0]*a[0,0,0,0]
 
 julia> collect(mf)
 3-element Vector{DifferencePolyRingElem{ZZRingElem}}:
  b[0,0,0,0]^2
- b[0,0,0,0]*a[0,0,0,0]
- c[0,0,0,0]*a[0,0,0,0]
+ a[0,0,0,0]*b[0,0,0,0]
+ a[0,0,0,0]*c[0,0,0,0]
 ```
 """
 monomials(a::ActionPolyRingElem{T}) where {T} = ActionPolyMonomials{typeof(a)}(a)
@@ -1077,13 +1111,13 @@ Return an iterator for the terms of `p` with respect to the ranking of the paren
 julia> dpr, (a,b,c) = difference_polynomial_ring(ZZ, [:a, :b, :c], 4; partition = [[0,1,1],[1,0,0]]); f = -2*a*b + a*c + 3*b^2;
 
 julia> tf = terms(f)
-Terms iterator of 3*b[0,0,0,0]^2 - 2*b[0,0,0,0]*a[0,0,0,0] + c[0,0,0,0]*a[0,0,0,0]
+Terms iterator of 3*b[0,0,0,0]^2 - 2*a[0,0,0,0]*b[0,0,0,0] + c[0,0,0,0]*a[0,0,0,0]
 
 julia> collect(tf)
 3-element Vector{DifferencePolyRingElem{ZZRingElem}}:
  3*b[0,0,0,0]^2
- -2*b[0,0,0,0]*a[0,0,0,0]
- c[0,0,0,0]*a[0,0,0,0]
+ -2*a[0,0,0,0]*b[0,0,0,0]
+ a[0,0,0,0]*c[0,0,0,0]
 ```
 """
 terms(a::ActionPolyRingElem{T}) where {T} = ActionPolyTerms{typeof(a)}(a)
