@@ -214,8 +214,6 @@ const PROJECT_UUID = Base.PkgId(@__MODULE__).uuid
 
 const is_dev = occursin("-dev", lowercase(string(VERSION_NUMBER)))
 
-const IJuliaMime = Union{MIME"text/latex", MIME"text/html"}
-
 const oscardir = Base.pkgdir(Oscar)
 
 function example(s::String)
@@ -279,7 +277,7 @@ include("Rings/ReesAlgebra.jl") # Needs ModuleFP
 include("NumberTheory/NmbThy.jl")
 include("NumberTheory/QuadFormAndIsom.jl")
 include("NumberTheory/vinberg.jl")
-include("NumberTheory/ZLattices.jl")
+include("NumberTheory/embedding_with_roots.jl")
 
 include("Combinatorics/Graphs/structs.jl")
 include("PolyhedralGeometry/PolyhedralGeometry.jl")
@@ -288,6 +286,7 @@ include("Polymake/polymake_to_oscar.jl")
 
 include("Combinatorics/Graphs/functions.jl")
 include("Combinatorics/PhylogeneticTrees.jl")
+include("NumberTheory/ZLattices.jl") # needs graphs
 
 include("Combinatorics/SimplicialComplexes.jl")
 include("Combinatorics/Matroids/JMatroids.jl")

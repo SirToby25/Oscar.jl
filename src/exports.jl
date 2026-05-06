@@ -334,6 +334,7 @@ export basis_of_global_sections_via_homogeneous_component
 export basis_of_global_sections_via_rational_functions
 export basis_of_h4
 export bell
+export bergman_fan
 export betti
 export betti_number
 export betti_numbers
@@ -387,6 +388,7 @@ export character_lattice
 export character_parameters
 export character_table
 export character_table_complex_reflection_group
+export character_table_rational
 export character_table_wreath_symmetric
 export character_to_rational_function
 export characteristic_subgroups, has_characteristic_subgroups, set_characteristic_subgroups
@@ -825,6 +827,7 @@ export inclusion_morphism
 export indegree
 export independent_sets
 export index
+export index_of_coset
 export index_of_gen
 export index_of_leading_term
 export indicator
@@ -1075,6 +1078,8 @@ export is_table_of_marks_name
 export is_ternary
 export is_total
 export is_transitive
+export is_transversal
+export is_transversal_with_presentation
 export is_transverse_intersection
 export is_trivial
 export is_tropically_generic
