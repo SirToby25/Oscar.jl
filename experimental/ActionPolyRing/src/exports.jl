@@ -17,7 +17,9 @@ export apply_action
 export autoreduce
 export difference_polynomial_ring
 export differential_polynomial_ring
+export equations
 export index_ordering_matrix
+export inequations
 export is_autoreduced
 export is_partially_reduced
 export is_reduced
