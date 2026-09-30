@@ -121,15 +121,21 @@
         quot1, rem1 = pseudodivrem(p1, q1)
         @test quot1 == u_x + v_y
         @test rem1 == v_y^2 + v_x
+        quotn1, remn1 = pseudodivrem(p1, q1; naive=true)
+        @test quotn1 == quot1
+        @test remn1 == remn1
 
         p2 = v_xx^2 + u_x
         q2 = u_y * v_xx - v_x
-
         @test pseudorem(p2, q2) == v_x^2 + u_y^2 * u_x
+        @test pseudorem(p2, q2; naive=true) == v_x^2 + u_y^2 * u_x
 
         quot2, rem2 = pseudodivrem(p2, q2)
         @test quot2 == u_y * v_xx + v_x
         @test rem2 == v_x^2 + u_y^2 * u_x
+        quotn2, remn2 = pseudodivrem(p2, q2; naive=true)
+        @test quotn2 == quot2
+        @test remn2 == rem2
 
         @test pseudorem(p2, q2, v_xx) == v_x^2 + u_y^2 * u_x
 
@@ -144,6 +150,20 @@
         quot3, rem3 = pseudodivrem(p3, q3)
         @test quot3 == u_x
         @test rem3 == dpr(0)
+
+        p4 = u_y^2 * v_x + 1
+        q4 = u_y * v_x + 1
+        @test pseudorem(p4, q4) == 1 - u_y
+        @test pseudorem(p4, q4; naive=true) == u_y*(1 - u_y)
+        @test pseudodivrem(p4, q4) == (u_y, 1 - u_y)
+        @test pseudodivrem(p4, q4; naive=true) == (u_y^2, u_y*(1 - u_y))
+
+        p5 = v_x^3 + 1
+        q5 = u_y * v_x^2 + 1
+        @test pseudorem(p5, q5) == -v_x + u_y
+        @test pseudorem(p5, q5; naive=true) == u_y*(-v_x + u_y)
+        @test pseudodivrem(p5, q5) == (v_x, -v_x + u_y)
+        @test pseudodivrem(p5, q5; naive=true) == (u_y*v_x, u_y*(-v_x + u_y))
 
         # Trivial Case 1: Degree of p is strictly less than degree of q
         p_triv1 = v_x
@@ -442,6 +462,37 @@
     @test !__irl(conv(f), conv(u[1]))
     @test !__irl(conv(f), conv(u[1]^2))
     @test __irl(conv(f), conv(u[1]^3))
+  end
+
+  @testset "berkowitz_minors" begin
+    __berkowitz_minors = Oscar.__berkowitz_minors
+    M = QQ[1 2 3; 4 5 6; 7 8 9]
+    @test __berkowitz_minors(M) == QQ.([1, -3, 0]) # The rhs is obained as [det(M[1:k, 1:k]) for k in 1:3]
+
+    R, (x1, x2, x3, x4, x5) = polynomial_ring(QQ, [:x1, :x2, :x3, :x4, :x5])
+
+    A = matrix(R, [
+      x1 + 2*x2 + 1          x2^2 + x3           x3 + x4 + 2;
+      x1*x2 + x3             x2 + 3*x4 + 1       x1 + x5;
+      x3 + 2*x5              x1^2 + x4           x4 + 3;
+    ]) # Some dense matrix
+
+    expected_minors = [
+      # m_1 = det(A[1:1, 1:1])
+      x1 + 2*x2 + 1,
+
+      # m_2 = det(A[1:2, 1:2])
+      -x1*x2^3 - x1*x2*x3 + x1*x2 + 3*x1*x4 + x1 - x2^2*x3 + 2*x2^2 + 6*x2*x4 + 3*x2 - x3^2 + 3*x4 + 1,
+
+      # m_3 = det(A[1:3, 1:3])
+      -x1^4 + x1^3*x2*x3 + x1^3*x2*x4 - x1^3*x5 - x1^3 - 2*x1^2*x2*x5 + x1^2*x3^2 + x1^2*x3*x4 + 2*x1^2*x3 - x1^2*x4
+      - x1^2*x5 - x1*x2^3*x4 - 3*x1*x2^3 + x1*x2^2*x3 + 2*x1*x2^2*x5 - 3*x1*x2*x3 + x1*x2*x4^2 + x1*x2*x4 + 3*x1*x2
+      + x1*x3^2 + 2*x1*x3*x5 + 3*x1*x4^2 - x1*x4*x5 + 9*x1*x4 + 3*x1 - x2^2*x3*x4 + x2^2*x3*x5 - 3*x2^2*x3 + 2*x2^2*x4
+      + 2*x2^2*x5^2 + 6*x2^2 - x2*x3^2 - x2*x3*x4 - 2*x2*x3*x5 - 2*x2*x3 + 6*x2*x4^2 - 4*x2*x4*x5 + 21*x2*x4 - 4*x2*x5
+      + 9*x2 - 3*x3^2*x4 + x3^2*x5 - 4*x3^2 - 2*x3*x4^2 - 6*x3*x4*x5 - 5*x3*x4 + 2*x3*x5^2 - 2*x3*x5 - 2*x3 - 6*x4^2*x5
+      + 3*x4^2 - 15*x4*x5 + 10*x4 - 4*x5 + 3
+    ]
+    @test __berkowitz_minors(A) == expected_minors
   end
 
 end # all tests
