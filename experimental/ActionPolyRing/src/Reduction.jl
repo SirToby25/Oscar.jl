@@ -4,19 +4,21 @@
 #
 ###############################################################################
 
-function pseudorem(p::PolyT, q::PolyT, var::PolyT) where {PolyT <: ActionPolyRingElem}
+function pseudorem(p::PolyT, q::PolyT, var::PolyT; naive::Bool=false) where {PolyT <: ActionPolyRingElem}
   check_parent(p, q)
   check_parent(p, var)
-  return __core_pseudorem(p, q, var, false)[1]
+  return __core_pseudorem(p, q, var, false, naive)[1]
 end
 
 @doc raw"""
-    pseudorem(p::PolyT, q::PolyT, i::Int, jet::Vector{Int}) where {PolyT <: ActionPolyRingElem} -> PolyT
+    pseudorem(p::PolyT, q::PolyT, i::Int, jet::Vector{Int}; naive::Bool=false) where {PolyT <: ActionPolyRingElem} -> PolyT
 
 Return the algebraic pseudo-remainder of `p` divided by `q` with respect to the jet variable specified by `i` and
 `jet`. If no jet variable is specified then division is performed with respect to the leader of `q`, even allowing
-`q` to be a nonzero constant. This method performs division by using a lazy pre-multiplication by the initial of `q`
-at each step, only multiplying the remainder when necessary.
+`q` to be a nonzero constant. If the keyword argument `naive` is set to `false` then this method performs division
+by using a lazy pre-multiplication by the initial of `q` at each step, only multiplying the remainder when necessary.
+For more details on what this means, see
+[pseudodivrem](@ref pseudodivrem(p::PolyT, q::PolyT, i::Int, jet::Vector{Int}) where {PolyT <: ActionPolyRingElem})
 
 This method allows all versions described in [Specifying jet variables](@ref specifying_jet_variables); see the online documentation.
 
@@ -46,41 +48,41 @@ julia> pseudorem(p, dpr(1))
 0
 ```
 """
-function pseudorem(p::PolyT, q::PolyT, i::Int, jet::Vector{Int}) where {PolyT <: ActionPolyRingElem}
+function pseudorem(p::PolyT, q::PolyT, i::Int, jet::Vector{Int}; naive::Bool=false) where {PolyT <: ActionPolyRingElem}
   deg_q = degree(q, i, jet)
   deg_q < 0 && throw(DivideError()) # By convention, (only) the zero polynomial has degree -1 in each jet variable
   @req deg_q > 0 "Cannot pseudo-divide by a polynomial with degree 0 in the specified division variable"
 
   # positive degree ensures existence of the key
-  return pseudorem(p, q, __jtv(parent(q))[(i, jet)])
+  return pseudorem(p, q, __jtv(parent(q))[(i, jet)]; naive=naive)
 end
 
-pseudorem(p::PolyT, q::PolyT, jet_idx::Tuple{Int, Vector{Int}}) where {PolyT <: ActionPolyRingElem} = pseudorem(p, q, jet_idx...)
-pseudorem(p::PolyT, q::PolyT, i::Int) where {PolyT <: ActionPolyRingElem} = pseudorem(p, q, gen(parent(p), i))
+pseudorem(p::PolyT, q::PolyT, jet_idx::Tuple{Int, Vector{Int}}; naive::Bool=false) where {PolyT <: ActionPolyRingElem} = pseudorem(p, q, jet_idx...; naive=naive)
+pseudorem(p::PolyT, q::PolyT, i::Int; naive::Bool=false) where {PolyT <: ActionPolyRingElem} = pseudorem(p, q, gen(parent(p), i); naive=naive)
 
-function pseudorem(p::PolyT, q::PolyT) where {PolyT <: ActionPolyRingElem}
+function pseudorem(p::PolyT, q::PolyT; naive::Bool=false) where {PolyT <: ActionPolyRingElem}
   is_zero(q) && throw(DivideError())
   is_constant(q) && return zero(q)
-  return pseudorem(p, q, leader(q))
+  return pseudorem(p, q, leader(q); naive=naive)
 end
 
 ### with div ###
-
-function pseudodivrem(p::PolyT, q::PolyT, var::PolyT) where {PolyT <: ActionPolyRingElem}
+function pseudodivrem(p::PolyT, q::PolyT, var::PolyT; naive::Bool=false) where {PolyT <: ActionPolyRingElem}
   check_parent(p, q)
   check_parent(p, var)
-  return __core_pseudodivrem(p, q, var, false)[1:2]
+  return __core_pseudodivrem(p, q, var, false, naive)[1:2]
 end
 
 @doc raw"""
-    pseudodivrem(p::PolyT, q::PolyT, i::Int, jet::Vector{Int}) where {PolyT <: ActionPolyRingElem} -> Tuple{PolyT, PolyT}
+    pseudodivrem(p::PolyT, q::PolyT, i::Int, jet::Vector{Int}; naive::Bool=false) where {PolyT <: ActionPolyRingElem} -> Tuple{PolyT, PolyT}
 
 Return the pair `(s, r)` where `s` is the pseudo-quotient and `r` is the pseudo-remainder of `p`
 by `q` with respect to the jet variable specified by `i` and `jet`. If no jet variable is specified
 then division is performed with respect to the leader of `q`, even allowing `q` to be a nonzero constant.
-The number of pre-multiplications by the leading coefficient of `q` in this jet variable is minimised,
-i.e. we have `lc(q)^k * p = s * q + r` where the integer `k >= 0` is minimal and `lc(q)` is the above
-mentioned leading coefficient.
+If the keyword argument `naive` is set to `false` then the number of pre-multiplications by the leading
+coefficient of `q` in this jet variable is minimised, i.e. we have `lc(q)^k * p = s * q + r` where the
+integer `k >= 0` is minimal and `lc(q)` is the above mentioned leading coefficient. Otherwise, `k` equals
+the naive upper bound of `max(deg(p) - deq(q) + 1, 0)`.
 
 This method allows all versions described in [Specifying jet variables](@ref specifying_jet_variables); see the online documentation.
 
@@ -118,31 +120,32 @@ julia> pseudodivrem(p, dpr(2))
 (1//2*x[0]^2 + 1//2*y[0], 0)
 ```
 """
-function pseudodivrem(p::PolyT, q::PolyT, i::Int, jet::Vector{Int}) where {PolyT <: ActionPolyRingElem}
+function pseudodivrem(p::PolyT, q::PolyT, i::Int, jet::Vector{Int}; naive::Bool=false) where {PolyT <: ActionPolyRingElem}
   deg_q = degree(q, i, jet)
   deg_q < 0 && throw(DivideError()) # By convention, (only) the zero polynomial has degree -1 in each jet variable
   @req deg_q > 0 "Cannot pseudo-divide by a polynomial with degree 0 in the specified division variable"
 
   # positive degree ensures existence of the key
-  return pseudodivrem(p, q, __jtv(parent(q))[(i, jet)])
+  return pseudodivrem(p, q, __jtv(parent(q); naive=naive)[(i, jet)])
 end
 
-pseudodivrem(p::PolyT, q::PolyT, jet_idx::Tuple{Int, Vector{Int}}) where {PolyT <: ActionPolyRingElem} = pseudodivrem(p, q, jet_idx...)
-pseudodivrem(p::PolyT, q::PolyT, i::Int) where {PolyT <: ActionPolyRingElem} = pseudodivrem(p, q, gen(parent(p), i))
+pseudodivrem(p::PolyT, q::PolyT, jet_idx::Tuple{Int, Vector{Int}}; naive::Bool=false) where {PolyT <: ActionPolyRingElem} = pseudodivrem(p, q, jet_idx...; naive=naive)
+pseudodivrem(p::PolyT, q::PolyT, i::Int; naive::Bool=false) where {PolyT <: ActionPolyRingElem} = pseudodivrem(p, q, gen(parent(p), i); naive=naive)
 
-function pseudodivrem(p::PolyT, q::PolyT) where {PolyT <: ActionPolyRingElem}
+function pseudodivrem(p::PolyT, q::PolyT; naive::Bool=false) where {PolyT <: ActionPolyRingElem}
   is_zero(q) && throw(DivideError())
 
   if is_constant(q)
-    flag, quo = divides(p, q)
-    if flag
-      return (quo, zero(p))
-    else
-      return (p, zero(p))
+    if !naive
+      flag, quo = divides(p, q)
+      if flag
+        return (quo, zero(p))
+      end
     end
+    return (p, zero(p))
   end
 
-  return pseudodivrem(p, q, leader(q))
+  return pseudodivrem(p, q, leader(q); naive=naive)
 end
 
 ### Ritt ordering ###
@@ -442,12 +445,14 @@ end
 #
 ###############################################################################
 
+#=
 __pseudorem_with_factors(p::P, q::P, v::P) where {P <: Union{MPolyRingElem, ActionPolyRingElem}} = __core_pseudorem(p, q, v, true)
 __pseudodivrem_with_factors(p::P, q::P, v::P) where {P <: Union{MPolyRingElem, ActionPolyRingElem}} = __core_pseudodivrem(p, q, v, true)
 __partially_reduce_with_factors(p::P, q::P) where {P <: Union{MPolyRingElem, ActionPolyRingElem}} = __core_partially_reduce(p, q, true)
 __partially_reduce_with_factors(p::P, S::Vector{P}) where {P <: Union{MPolyRingElem, ActionPolyRingElem}} = __core_partially_reduce(p, S, true)
 __reduce_with_factors(p::P, q::P) where {P <: Union{MPolyRingElem, ActionPolyRingElem}} = __core_reduce(p, q, true)
 __reduce_with_factors(p::P, S::Vector{P}) where {P <: Union{MPolyRingElem, ActionPolyRingElem}} = __core_reduce(p, S, true)
+=#
 
 ###############################################################################
 #
@@ -464,28 +469,46 @@ __reduce_with_factors(p::P, S::Vector{P}) where {P <: Union{MPolyRingElem, Actio
 
 # Note, that all of the following methods do not mutate their inputs as the subroutine __core_pseudorem deepcopies
 # its first argument and __univariate_leading_coefficient deepcopies the second argument.
-function __core_pseudorem(p::P, q::P, v::P, track_factors::Bool) where {P <: Union{MPolyRingElem, ActionPolyRingElem}}
+function __core_pseudorem(p::P, q::P, v::P, track_factors::Bool, naive::Bool) where {P <: Union{MPolyRingElem, ActionPolyRingElem}}
   deg_q = degree(q, v)
   deg_q < 0 && throw(DivideError())
   @req deg_q > 0 "Cannot pseudo-divide by a polynomial with degree 0 in the specified division variable"
 
   rem = deepcopy(p)
   factors = P[]
-  degree(p, v) < deg_q && return (rem, factors)
+  deg_p = degree(p, v)
+  deg_p < deg_q && return (rem, factors)
 
   lc_q = __univariate_leading_coefficient(q, v)
+
+  delta = deg_p - deg_q + 1
+  actual_muls = 0
 
   while !is_zero(rem) && (deg_rem = degree(rem, v)) >= deg_q
     lc_rem = __univariate_leading_coefficient(rem, v)
 
-    flag, c = divides(lc_rem, lc_q)
+    if !naive
+      flag, c = divides(lc_rem, lc_q)
+    else
+      flag = false
+    end
 
     if flag
       rem = sub!(rem, c * (v^(deg_rem - deg_q)) * q)
     else
       rem = mul!(rem, lc_q)
+      actual_muls += 1
       rem = sub!(rem, lc_rem * (v^(deg_rem - deg_q)) * q)
       if track_factors
+        push!(factors, lc_q)
+      end
+    end
+  end
+
+  if naive && actual_muls < delta
+    rem = mul!(rem, lc_q^(delta - actual_muls))
+    if track_factors
+      for _ in 1:(delta - actual_muls)
         push!(factors, lc_q)
       end
     end
@@ -494,7 +517,7 @@ function __core_pseudorem(p::P, q::P, v::P, track_factors::Bool) where {P <: Uni
   return (rem, factors)
 end
 
-function __core_pseudodivrem(p::P, q::P, v::P, track_factors::Bool) where {P <: Union{MPolyRingElem, ActionPolyRingElem}}
+function __core_pseudodivrem(p::P, q::P, v::P, track_factors::Bool, naive::Bool) where {P <: Union{MPolyRingElem, ActionPolyRingElem}}
   deg_q = degree(q, v)
   deg_q < 0 && throw(DivideError())
   @req deg_q > 0 "Cannot pseudo-divide by a polynomial with degree 0 in the specified division variable"
@@ -502,14 +525,22 @@ function __core_pseudodivrem(p::P, q::P, v::P, track_factors::Bool) where {P <: 
   quo = zero(parent(p))
   rem = deepcopy(p)
   factors = P[]
-  degree(p, v) < deg_q && return (quo, rem, factors)
+  deg_p = degree(p, v)
+  deg_p < deg_q && return (quo, rem, factors)
 
   lc_q = __univariate_leading_coefficient(q, v)
+
+  delta = deg_p - deg_q + 1
+  actual_muls = 0
 
   while !is_zero(rem) && (deg_rem = degree(rem, v)) >= deg_q
     lc_rem = __univariate_leading_coefficient(rem, v)
 
-    flag, c = divides(lc_rem, lc_q)
+    if !naive
+      flag, c = divides(lc_rem, lc_q)
+    else
+      flag = false
+    end
 
     if flag
       quo_term = c * (v^(deg_rem - deg_q))
@@ -518,10 +549,23 @@ function __core_pseudodivrem(p::P, q::P, v::P, track_factors::Bool) where {P <: 
     else
       rem = mul!(rem, lc_q)
       quo = mul!(quo, lc_q)
+      actual_muls += 1
+
       quo_term = lc_rem * (v^(deg_rem - deg_q))
       quo = add!(quo, quo_term)
       rem = sub!(rem, quo_term * q)
       if track_factors
+        push!(factors, lc_q)
+      end
+    end
+  end
+
+  if naive && actual_muls < delta
+    pad_factor = lc_q^(delta - actual_muls)
+    rem = mul!(rem, pad_factor)
+    quo = mul!(quo, pad_factor)
+    if track_factors
+      for _ in 1:(delta - actual_muls)
         push!(factors, lc_q)
       end
     end
@@ -545,7 +589,7 @@ function __core_partially_reduce(p::P, q::P, track_factors::Bool) where {P <: Ac
   while shift !== nothing
     q_shifted = apply_action(q, shift)
     ld_q_shifted = leader(q_shifted)
-    p_red, step_factors = __core_pseudorem(p_red, q_shifted, ld_q_shifted, track_factors)
+    p_red, step_factors = __core_pseudorem(p_red, q_shifted, ld_q_shifted, track_factors, false)
 
     if track_factors
       append!(factors, step_factors)
@@ -601,7 +645,7 @@ function __core_reduce(p::P, q::P, track_factors::Bool) where {P <: Union{MPolyR
     append!(factors, p_factors)
   end
 
-  res, b_factors = __core_pseudorem(p_red, q, __leader(q), track_factors)
+  res, b_factors = __core_pseudorem(p_red, q, __leader(q), track_factors, false)
   if track_factors
     append!(factors, b_factors)
   end
@@ -640,7 +684,7 @@ function __core_reduce(p::P, S::Vector{P}, track_factors::Bool) where {P <: Unio
       # 2. Algebraic Reduction
       ld_q = __leader(q)
       if degree(res, ld_q) >= degree(q, ld_q)
-        res, b_step = __core_pseudorem(res, q, ld_q, track_factors)
+        res, b_step = __core_pseudorem(res, q, ld_q, track_factors, false)
         if track_factors
           append!(factors, b_step)
         end
@@ -733,3 +777,443 @@ function __is_ritt_less(p::P, q::P) where {P <: MPolyRingElem}
 end
 __is_ritt_less(p::P, q::P) where {P <: ActionPolyRingElem} = is_ritt_less(p, q)
 
+###############################################################################
+#
+#  Subresultant polynomial remainder sequence
+#
+###############################################################################
+
+subresultant_prs(A::T, B::T, v::T; strategy::Int=0) where {T <: MPolyRingElem} = subresultant_prs(A, B, var_index(v); strategy=strategy)
+function subresultant_prs(A::T, B::T, i::Int; strategy::Int=0) where {T <: MPolyRingElem}
+  @req strategy in 0:2 "Unknown strategy: Allowed strategies are accessed via the integers 0,1,2"
+
+  if strategy == 0 # Ducos for univariate/bivariate or high main degree; Kerber for multivariate moderate degree
+    if length(union(vars(A), vars(B))) <= 2 || max(degree(A, i), degree(B, i)) >= 15
+      return subresultant_prs_ducos(A, B, i)
+    else
+      return subresultant_prs_kerber(A, B, i)
+    end
+  elseif strategy == 1
+    return subresultant_prs_ducos(A, B, i)
+  elseif strategy == 2
+    return subresultant_prs_kerber(A, B, i)
+  end
+end
+
+### Ducos SPRS ###
+# For details; see the paper 'Optimizations of the subresultant algorithm' by Ducos, 2000.
+# DOI: https://doi.org/10.1016/S0022-4049(98)00081-4
+
+@doc raw"""
+    subresultant_prs_ducos(f::T, g::T, i::Int) where {T <: MPolyRingElem} -> Vector{T}
+
+Return the subresultant polynomial remainder sequence of `f` and `g` in the `i`-th variable
+of their base ring, using an algorithmic variant due to Ducos.
+"""
+function subresultant_prs_ducos(P::T, Q::T, i::Int) where {T <: MPolyRingElem}
+  check_parent(P, Q)
+  @req degree(P, i) >= degree(Q, i) "The degree in the specified variable of the second polynomial
+  is strictly larger than the same degree of the first polynomial"
+
+  S = [P, Q] # The to-be-computed remainder sequence
+  degree(Q, i) <= 0 && return S
+
+  # Initial leading coefficient accumulation
+  s = coeff(Q, [i], [degree(Q, i)])^(degree(P, i) - degree(Q, i))
+
+  A_poly = Q
+  B_poly = __core_pseudorem(P, -Q, gen(parent(P), i), false, true)[1] # SPRS requires naive pseudo-reduction
+
+  while true
+    d = degree(A_poly, i)
+    e = degree(B_poly, i)
+
+    is_zero(B_poly) && return S
+
+    push!(S, B_poly)
+
+    delta = d - e
+    if delta > 1
+      C = __lazard_se(A_poly, B_poly, s, i)
+      push!(S, C)
+    else
+      C = B_poly
+    end
+
+    e == 0 && return S
+
+    # Calculate the next subresultant S_{e-1} in the sequence
+    B_poly = __ducos_s_e_minus_1(A_poly, B_poly, C, s, i)
+    A_poly = C
+    s = coeff(A_poly, [i], [degree(A_poly, i)])
+  end
+end
+
+# Below are the helpers used during Ducos's algorithm (which he calls optimizations)
+
+# Lazard's optimization to compute the subresultant S_e without intermediate powers
+function __lazard_se(Sd::T, Sd_1::T, s::T, i::Int) where {T <: MPolyRingElem}
+  d = degree(Sd, i)
+  e = degree(Sd_1, i)
+  n = d - e - 1
+
+  n == 0 && return Sd_1
+
+  x = coeff(Sd_1, [i], [e])
+
+  # Find the highest power of 2 <= n for the dichotomous powering
+  a = 1 << (8 * sizeof(n) - 1 - leading_zeros(n))
+  c = x
+  n_rem = n - a
+
+  while a > 1
+    a >>= 1
+    c = divexact(c * c, s)
+    if n_rem >= a
+      c = divexact(c * x, s)
+      n_rem -= a
+    end
+  end
+
+  return divexact(c * Sd_1, s)
+end
+
+function __ducos_s_e_minus_1(A::T, B::T, C::T, s::T, i::Int) where {T <: MPolyRingElem}
+  d = degree(A, i)
+  e = degree(B, i)
+  v = gen(parent(A), i)
+
+  d <= 0 && return zero(parent(A))
+
+  c_d_1 = coeff(B, [i], [e])
+  s_e = coeff(C, [i], [degree(C, i)])
+
+  D = zero(parent(A))
+  for j in 0:(e-1)
+    c_Aj = coeff(A, [i], [j])
+    if !is_zero(c_Aj)
+      D += (s_e * c_Aj) * (v^j)
+    end
+  end
+
+  H_curr = (s_e * (v^e)) - C
+
+  c_Ae = coeff(A, [i], [e])
+  if !is_zero(c_Ae)
+    D += c_Ae * H_curr
+  end
+
+  for j in (e+1):(d-1)
+    H_curr = v * H_curr
+    cf = coeff(H_curr, [i], [e])
+    if !is_zero(cf)
+      H_curr -= divexact(cf * B, c_d_1)
+    end
+
+    c_Aj = coeff(A, [i], [j])
+    if !is_zero(c_Aj)
+      D += c_Aj * H_curr
+    end
+  end
+
+  D = divexact(D, s)
+
+  H_d = v * H_curr
+  cf_d = coeff(H_d, [i], [e])
+
+  val = divexact(c_d_1 * (H_d + D) - cf_d * B, s)
+
+  return isodd(d - e + 1) ? -val : val
+end
+
+### Kerber SPRS ###
+
+# For details; see the paper 'Division-Free Computation of Subresultants Using Bezout Matrices' by Kerber, 2009.
+# DOI: 10.1080/00207160802460595
+
+# Reference: M. Kerber (2009), Algorithm 4.1 (SubresViaBezout) - the main algorithm
+
+@doc raw"""
+    subresultant_prs_kerber(f::T, g::T, i::Int; s::Int=degree(g, i)) where {T <: MPolyRingElem} -> Vector{T}
+
+Return the subresultant polynomial remainder sequence of `f` and `g` in the `i`-th variable of
+their base ring, using an algorithm due to Kerber. This algorithm does not perform any divisions
+in the base ring and is hence preferable for such base rings where divisions are costly, e.g.,
+multivariate polynomial rings in many variables.
+
+# Keyword Arguments
+- `s::Int`: The number of leading terms to compute for each subresultant polynomial (so `f` and `g` themselves
+  are not truncated). Defaults to `degree(g, i)`, which computes the full sequence. Setting `s = 1`
+  computes only the respective leading coefficients, the so-called principal subresultant coefficients.
+"""
+function subresultant_prs_kerber(f::T, g::T, i::Int; s::Int=degree(g, i)) where {T <: MPolyRingElem}
+  check_parent(f, g)
+  R = parent(f)
+  n = degree(f, i)
+  m = degree(g, i)
+
+  @req n >= m "The degree in the specified variable of the second polynomial
+  is strictly larger than the same degree of the first polynomial"
+  m <= 0 && return [f, g]
+  @req s in 1:m "The truncation parameter must lie between 1 and $m, the latter being the degree of the second input in the specified variable"
+
+  H = __kerber_H_matrix(f, g, i)
+
+  # We store the minors in a dictionary where minors_map[j] = [m_1, ..., m_dim]
+  minors_map = Dict{Int, Vector{elem_type(R)}}()
+
+  for j in 1:s
+    S_j = __kerber_S_matrix(H, j, s)
+    minors_map[j] = __berkowitz_minors(S_j)
+  end
+
+  res = Vector{T}(undef, m + 2)
+  res[1] = f
+  res[2] = g
+
+  x = gen(R, i)
+  for k in (n - m + 1):n
+    poly = zero(R)
+    max_t = min(s - 1, n - k)
+
+    for t in 0:max_t
+      j_rep = mod1(k + t, s)
+      minor_val = minors_map[j_rep][k]
+      if !is_zero(minor_val)
+        poly += minor_val * (x^(n - k - t))
+      end
+    end
+
+    if k % 4 in (2, 3) # signs are determined mod 4 (cf. discriminants)
+      poly = -poly
+    end
+    res[k - n + m + 2] = poly
+  end
+
+  return res
+end
+
+# Reference: M. Kerber (2009), Algorithms 3.1 and 3.2
+# This algorithm computes the leading principal minors of the square n-by-n matrix `A`,
+# i.e. it computes [det(A[1:k, 1:k]) for k in 1:n], without any division in the base ring of `A`
+function __berkowitz_minors(A::MatElem{T}) where {T <: RingElement}
+  R = base_ring(A)
+  n = nrows(A)
+  @req n == ncols(A) "The matrix is not square"
+
+  minors = Vector{T}(undef, n)
+
+  minors[1] = deepcopy(A[1, 1])
+  n == 1 && return minors # The 1 by 1 case
+
+  chi = [zero(R) for _ in 1:n+1]
+  next_chi = [zero(R) for _ in 1:n+1]
+  v = [zero(R) for _ in 1:n-1]
+  next_v = [zero(R) for _ in 1:n-1]
+  q = [zero(R) for _ in 1:n-1]
+  c_vec = [zero(R) for _ in 1:n+1]
+
+  temp = zero(R)
+
+  chi[1] = one(R)
+  chi[2] = -A[1, 1]
+
+  for k in 2:n
+    r = k - 1
+    a_corner = A[k, k]
+
+    for i in 1:r
+      v[i] = A[i, k]
+    end
+
+    for p in 1:r
+      dot_val = zero(R)
+      for i in 1:r
+        temp = mul!(temp, A[k, i], v[i])
+        dot_val = add!(dot_val, temp)
+      end
+      q[p] = dot_val
+
+      if p < r
+        for i in 1:r
+          row_dot = zero(R)
+          for j in 1:r
+            temp = mul!(temp, A[i, j], v[j])
+            row_dot = add!(row_dot, temp)
+          end
+          next_v[i] = row_dot
+        end
+
+        v, next_v = next_v, v
+      end
+    end
+
+    c_vec[1] = one(R)
+    c_vec[2] = -a_corner
+    for p in 1:r
+      c_vec[p + 2] = -q[p]
+    end
+
+    for i in 1:(k + 1)
+      acc = zero(R)
+      max_j = min(i, k)
+      for j in 1:max_j
+        temp = mul!(temp, c_vec[i - j + 1], chi[j])
+        acc = add!(acc, temp)
+      end
+      next_chi[i] = acc
+    end
+
+    chi, next_chi = next_chi, chi
+
+    c_0 = chi[k + 1] # leading minors are the constant coefficients of the chi's
+    minors[k] = isodd(k) ? -c_0 : deepcopy(c_0)
+  end
+
+  return minors
+end
+
+# Reference: M. Kerber (2009), Definition 2.5
+# This method returns the polynomial H_{idx} associated to f and g (of degrees m and n
+# in the i-th variable of the base ring) from Definition 2.5
+function __kerber_H_poly(f::T, g::T, i::Int, n::Int, m::Int, idx::Int) where {T <: MPolyRingElem}
+  R = parent(f)
+  x = gen(R, i)
+
+  x_powers = Vector{T}(undef, n + 1)
+  x_powers[1] = one(R)
+  for j in 1:n
+    x_powers[j + 1] = x_powers[j] * x
+  end
+
+  temp = zero(R)
+
+  # Following the definition, we compute the result as P1*P2 - P3*P4
+
+  # P1 = f_n * x^(idx-1) + ... + f_{n-idx+1}
+  P1 = zero(R)
+  for k in 0:(idx - 1)
+    c = coeff(f, [i], [n - k])
+    if !is_zero(c)
+      temp = mul!(temp, c, x_powers[idx - k])
+      P1 = add!(P1, temp)
+    end
+  end
+
+  # P2 = g_{m-idx} * x^(n-idx) + ... + g_0 * x^(n-m)
+  P2 = zero(R)
+  for k in 0:(m - idx)
+    c = coeff(g, [i], [k])
+    if !is_zero(c)
+      temp = mul!(temp, c, x_powers[k + n - m + 1])
+      P2 = add!(P2, temp)
+    end
+  end
+
+  # P3 = f_{n-idx} * x^(n-idx) + ... + f_0
+  P3 = zero(R)
+  for k in 0:(n - idx)
+    c = coeff(f, [i], [k])
+    if !is_zero(c)
+      temp = mul!(temp, c, x_powers[k + 1])
+      P3 = add!(P3, temp)
+    end
+  end
+
+  # P4 = g_m * x^(idx-1) + ... + g_{m-idx+1}
+  P4 = zero(R)
+  for k in 0:(idx - 1)
+    c = coeff(g, [i], [m - k])
+    if !is_zero(c)
+      temp = mul!(temp, c, x_powers[idx - k])
+      P4 = add!(P4, temp)
+    end
+  end
+
+  res = P1*P2
+  res = sub!(res, P3*P4)
+  return res
+end
+
+# Reference: M. Kerber (2009), Definition 2.5
+# This method returns the matrix H from Theorem 2.6 (or line 3 in Algorithm 4.1)
+function __kerber_H_matrix(f::T, g::T, i::Int) where {T <: MPolyRingElem}
+  R = parent(f)
+  n = degree(f, i)
+  m = degree(g, i)
+
+  @req n >= m "The degree of the second input in the specified variable is smaller than the degree of the first input"
+  @req m >= 0 "The second polynomial is constant in the specified variable"
+
+  H = zero_matrix(R, n, n)
+
+  # Bottom rows of H
+  for r in (m + 1):n
+    row_H = n - r + 1
+    shift = n - r
+    for j in 0:m
+      c = coeff(g, [i], [j])
+      if !is_zero(c)
+        col_H = n - (j + shift)
+        H[row_H, col_H] = c
+      end
+    end
+  end
+
+  # Top rows of H (requires H_poly by definition)
+  for r in 1:m
+    row_H = n - r + 1
+    H_poly = __kerber_H_poly(f, g, i, n, m, m - r + 1)
+
+    for p in 0:(n - 1)
+      c = coeff(H_poly, [i], [p])
+      if !is_zero(c)
+        col_H = n - p
+        H[row_H, col_H] = c
+      end
+    end
+  end
+
+  return H
+end
+
+# Reference: M. Kerber (2009), Definitions 4.1 & 4.2
+# This method returns the matrix S_{j,s}(A) from Definition 4.2 (2) (which is also used
+# in the 4-th line of Algorithm 4.1)
+function __kerber_S_matrix(A::MatElem{T}, j::Int, s::Int) where {T <: RingElement}
+  n = nrows(A)
+  N_js = div(n - j, s)
+
+  dim_S = j + s * N_js
+  R = base_ring(A)
+  S_mat = zero_matrix(R, dim_S, dim_S)
+
+  col_idx = 1
+
+  for i in 0:N_js
+    p = j + s * i
+
+    if p < s
+      for val in p:-1:1
+        for row in 1:dim_S
+          S_mat[row, col_idx] = A[row, val]
+        end
+        col_idx += 1
+      end
+    else
+      for row in 1:dim_S
+        S_mat[row, col_idx] = A[row, p]
+      end
+      col_idx += 1
+
+      for val in (p - s + 1):(p - 1)
+        for row in 1:dim_S
+          S_mat[row, col_idx] = -A[row, val]
+        end
+        col_idx += 1
+      end
+    end
+  end
+
+  return S_mat
+end

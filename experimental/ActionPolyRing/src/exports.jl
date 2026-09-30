@@ -31,6 +31,9 @@ export ranking
 export riquier_matrix
 export separant
 export set_ranking!
+export subresultant_prs
+export subresultant_prs_ducos
+export subresultant_prs_kerber
 export trailing_monomial
 export trailing_term
 export univariate_coefficients
