@@ -783,61 +783,99 @@ __is_ritt_less(p::P, q::P) where {P <: ActionPolyRingElem} = is_ritt_less(p, q)
 #
 ###############################################################################
 
-subresultant_prs(A::T, B::T, v::T; strategy::Int=0) where {T <: MPolyRingElem} = subresultant_prs(A, B, var_index(v); strategy=strategy)
+function subresultant_prs(A::T, B::T, v::T; strategy::Int=0) where {T <: MPolyRingElem}
+  check_parent(A, v)
+  return subresultant_prs(A, B, var_index(v); strategy=strategy)
+end
+
+@doc raw"""
+    subresultant_prs(p::T, q::T, i::Int; strategy::Int=0) where {T <: MPolyRingElem} -> Vector{T}
+
+Return the subresultant polynomial remainder sequence of `p` and `q` in the `i`-th variable
+of their base ring. The returned vector starts with `p` and `q`, followed by the regular
+subresultants in decreasing degree.
+
+Depending on the `strategy` parameter, the computation is dispatched to either Ducos's
+or Kerber's algorithm. When Kerber's algorithm is selected, all vanishing
+subresultants are filtered out to yield a true polynomial remainder sequence.
+
+# Keyword Arguments
+- `strategy::Int`: The algorithmic strategy used to compute the sequence.
+  - `0` (default): Heuristically chosen strategy. Uses Ducos's algorithm if the total number
+    of variables is at most 2 or if the main degree is at least 15; otherwise dispatches to Kerber's
+    division-free algorithm.
+  - `1`: Force Ducos's subresultant algorithm (see [`subresultant_prs_ducos`](@ref)).
+  - `2`: Force Kerber's division-free algorithm (see [`subresultant_prs_kerber`](@ref)),
+    filtering out all zero subresultants.
+"""
 function subresultant_prs(A::T, B::T, i::Int; strategy::Int=0) where {T <: MPolyRingElem}
-  @req strategy in 0:2 "Unknown strategy: Allowed strategies are accessed via the integers 0,1,2"
+  check_parent(A, B)
+  @req strategy in 0:2 "Unknown strategy: Allowed strategies are accessed via the integers 0 (heuristically), 1 (ducos), 2 (kerber)"
+
+  is_zero(B) && return [A, B] # avoid filtering for kerber
 
   if strategy == 0 # Ducos for univariate/bivariate or high main degree; Kerber for multivariate moderate degree
-    if length(union(vars(A), vars(B))) <= 2 || max(degree(A, i), degree(B, i)) >= 15
+    if length(union(vars(A), vars(B))) <= 2 || degree(A, i) >= 15
       return subresultant_prs_ducos(A, B, i)
     else
-      return subresultant_prs_kerber(A, B, i)
+      chain = subresultant_prs_kerber(A, B, i)
+      return [p for (k, p) in enumerate(chain) if k <= 2 || degree(p, i) == degree(B, i) - k + 2]
     end
   elseif strategy == 1
     return subresultant_prs_ducos(A, B, i)
   elseif strategy == 2
-    return subresultant_prs_kerber(A, B, i)
+    chain = subresultant_prs_kerber(A, B, i)
+    return [p for (k, p) in enumerate(chain) if k <= 2 || degree(p, i) == degree(B, i) - k + 2]
   end
 end
 
 ### Ducos SPRS ###
 # For details; see the paper 'Optimizations of the subresultant algorithm' by Ducos, 2000.
 # DOI: https://doi.org/10.1016/S0022-4049(98)00081-4
+function subresultant_prs_ducos(f::T, g::T, v::T; min_deg::Int=0) where {T <: MPolyRingElem}
+  check_parent(f, v)
+  return subresultant_prs(f, g, var_index(v); min_deg=min_deg)
+end
 
 @doc raw"""
-    subresultant_prs_ducos(f::T, g::T, i::Int) where {T <: MPolyRingElem} -> Vector{T}
+    subresultant_prs_ducos(p::T, q::T, i::Int; min_deg::Int=0) where {T <: MPolyRingElem} -> Vector{T}
 
-Return the subresultant polynomial remainder sequence of `f` and `g` in the `i`-th variable
-of their base ring, using an algorithmic variant due to Ducos.
+Return the subresultant polynomial remainder sequence of `p` and `q` in the `i`-th variable
+of their base ring, using an algorithmic variant due to Ducos. The returned vector starts with
+`p` and `q`, followed by the regular subresultants in decreasing degree.
+
+# Keyword Arguments
+- `min_deg::Int=0`: The degree threshold in the `i`-th variable at which to terminate computation.
+  The sequence is truncated such that it is exactly equivalent to filtering the full sequence
+  of regular subresultants for polynomials of degree `>= min_deg`. This will not affect the first
+  two elements `p` and `q` of the returned vector.
 """
-function subresultant_prs_ducos(P::T, Q::T, i::Int) where {T <: MPolyRingElem}
+function subresultant_prs_ducos(P::T, Q::T, i::Int; min_deg::Int=0) where {T <: MPolyRingElem}
   check_parent(P, Q)
   @req degree(P, i) >= degree(Q, i) "The degree in the specified variable of the second polynomial
-  is strictly larger than the same degree of the first polynomial"
+  cannot be strictly larger than the same degree of the first polynomial"
+  @req min_deg >= 0 "The minimal degree must be non-negative"
 
-  S = [P, Q] # The to-be-computed remainder sequence
-  degree(Q, i) <= 0 && return S
+  S = [P, Q]
+  degree(Q, i) <= min_deg && return S
 
-  # Initial leading coefficient accumulation
   s = coeff(Q, [i], [degree(Q, i)])^(degree(P, i) - degree(Q, i))
-
   A_poly = Q
   B_poly = __core_pseudorem(P, -Q, gen(parent(P), i), false, true)[1] # SPRS requires naive pseudo-reduction
 
   while true
     d = degree(A_poly, i)
-    e = degree(B_poly, i)
+    e = degree(B_poly, i) # next to potentially be added
 
     is_zero(B_poly) && return S
+    e < min_deg && return S
 
-    push!(S, B_poly)
-
-    delta = d - e
-    if delta > 1
+    if d - e > 1 # defective subresultant
       C = __lazard_se(A_poly, B_poly, s, i)
       push!(S, C)
-    else
+    else # regular subresultant
       C = B_poly
+      push!(S, C)
     end
 
     e == 0 && return S
@@ -916,7 +954,7 @@ function __ducos_s_e_minus_1(A::T, B::T, C::T, s::T, i::Int) where {T <: MPolyRi
     end
   end
 
-  D = divexact(D, s)
+  D = divexact!(D, coeff(A, [i], [d]))
 
   H_d = v * H_curr
   cf_d = coeff(H_d, [i], [e])
@@ -927,22 +965,26 @@ function __ducos_s_e_minus_1(A::T, B::T, C::T, s::T, i::Int) where {T <: MPolyRi
 end
 
 ### Kerber SPRS ###
-
 # For details; see the paper 'Division-Free Computation of Subresultants Using Bezout Matrices' by Kerber, 2009.
 # DOI: 10.1080/00207160802460595
 
 # Reference: M. Kerber (2009), Algorithm 4.1 (SubresViaBezout) - the main algorithm
+function subresultant_prs_kerber(f::T, g::T, v::T; s::Int=degree(g, i)) where {T <: MPolyRingElem}
+  check_parent(f, v)
+  return subresultant_prs_kerber(f, g, var_index(v); s=s)
+end
 
 @doc raw"""
-    subresultant_prs_kerber(f::T, g::T, i::Int; s::Int=degree(g, i)) where {T <: MPolyRingElem} -> Vector{T}
+    subresultant_prs_kerber(p::T, q::T, i::Int; s::Int=degree(g, i)) where {T <: MPolyRingElem} -> Vector{T}
 
-Return the subresultant polynomial remainder sequence of `f` and `g` in the `i`-th variable of
+Return the subresultant polynomial remainder sequence of `p` and `q` in the `i`-th variable of
 their base ring, using an algorithm due to Kerber. This algorithm does not perform any divisions
 in the base ring and is hence preferable for such base rings where divisions are costly, e.g.,
-multivariate polynomial rings in many variables.
+multivariate polynomial rings in many variables. The returned vector starts with `p` and `q`,
+followed by the regular subresultants in decreasing degree.
 
 # Keyword Arguments
-- `s::Int`: The number of leading terms to compute for each subresultant polynomial (so `f` and `g` themselves
+- `s::Int`: The number of leading terms to compute for each subresultant polynomial (so `p` and `q`
   are not truncated). Defaults to `degree(g, i)`, which computes the full sequence. Setting `s = 1`
   computes only the respective leading coefficients, the so-called principal subresultant coefficients.
 """
@@ -953,7 +995,7 @@ function subresultant_prs_kerber(f::T, g::T, i::Int; s::Int=degree(g, i)) where 
   m = degree(g, i)
 
   @req n >= m "The degree in the specified variable of the second polynomial
-  is strictly larger than the same degree of the first polynomial"
+  cannot be strictly larger than the same degree of the first polynomial"
   m <= 0 && return [f, g]
   @req s in 1:m "The truncation parameter must lie between 1 and $m, the latter being the degree of the second input in the specified variable"
 
@@ -1193,27 +1235,22 @@ function __kerber_S_matrix(A::MatElem{T}, j::Int, s::Int) where {T <: RingElemen
   for i in 0:N_js
     p = j + s * i
 
-    if p < s
-      for val in p:-1:1
-        for row in 1:dim_S
-          S_mat[row, col_idx] = A[row, val]
-        end
-        col_idx += 1
-      end
-    else
+    # 1. Pivot column of the block (positive)
+    for row in 1:dim_S
+      S_mat[row, col_idx] = A[row, p]
+    end
+    col_idx += 1
+
+    # 2. Trailing columns of the block (negated, in increasing order)
+    start_val = max(1, p - s + 1)
+    for val in start_val:(p - 1)
       for row in 1:dim_S
-        S_mat[row, col_idx] = A[row, p]
+        S_mat[row, col_idx] = -A[row, val]
       end
       col_idx += 1
-
-      for val in (p - s + 1):(p - 1)
-        for row in 1:dim_S
-          S_mat[row, col_idx] = -A[row, val]
-        end
-        col_idx += 1
-      end
     end
   end
 
   return S_mat
 end
+

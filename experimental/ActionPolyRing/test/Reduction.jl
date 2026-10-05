@@ -464,35 +464,170 @@
     @test __irl(conv(f), conv(u[1]^3))
   end
 
-  @testset "berkowitz_minors" begin
-    __berkowitz_minors = Oscar.__berkowitz_minors
-    M = QQ[1 2 3; 4 5 6; 7 8 9]
-    @test __berkowitz_minors(M) == QQ.([1, -3, 0]) # The rhs is obained as [det(M[1:k, 1:k]) for k in 1:3]
+  @testset "kerber helpers" begin
+    @testset "berkowitz_minors" begin
+      __berkowitz_minors = Oscar.__berkowitz_minors
+      M = QQ[1 2 3; 4 5 6; 7 8 9]
+      @test __berkowitz_minors(M) == QQ.([1, -3, 0]) # The rhs is obained as [det(M[1:k, 1:k]) for k in 1:3]
 
-    R, (x1, x2, x3, x4, x5) = polynomial_ring(QQ, [:x1, :x2, :x3, :x4, :x5])
+      R, (x1, x2, x3, x4, x5) = polynomial_ring(QQ, [:x1, :x2, :x3, :x4, :x5])
 
-    A = matrix(R, [
-      x1 + 2*x2 + 1          x2^2 + x3           x3 + x4 + 2;
-      x1*x2 + x3             x2 + 3*x4 + 1       x1 + x5;
-      x3 + 2*x5              x1^2 + x4           x4 + 3;
-    ]) # Some dense matrix
+      A = matrix(R, [
+        x1 + 2*x2 + 1          x2^2 + x3           x3 + x4 + 2;
+        x1*x2 + x3             x2 + 3*x4 + 1       x1 + x5;
+        x3 + 2*x5              x1^2 + x4           x4 + 3;
+      ]) # Some dense matrix
 
-    expected_minors = [
-      # m_1 = det(A[1:1, 1:1])
-      x1 + 2*x2 + 1,
+      expected_minors = [
+        # m_1 = det(A[1:1, 1:1])
+        x1 + 2*x2 + 1,
 
-      # m_2 = det(A[1:2, 1:2])
-      -x1*x2^3 - x1*x2*x3 + x1*x2 + 3*x1*x4 + x1 - x2^2*x3 + 2*x2^2 + 6*x2*x4 + 3*x2 - x3^2 + 3*x4 + 1,
+        # m_2 = det(A[1:2, 1:2])
+        -x1*x2^3 - x1*x2*x3 + x1*x2 + 3*x1*x4 + x1 - x2^2*x3 + 2*x2^2 + 6*x2*x4 + 3*x2 - x3^2 + 3*x4 + 1,
 
-      # m_3 = det(A[1:3, 1:3])
-      -x1^4 + x1^3*x2*x3 + x1^3*x2*x4 - x1^3*x5 - x1^3 - 2*x1^2*x2*x5 + x1^2*x3^2 + x1^2*x3*x4 + 2*x1^2*x3 - x1^2*x4
-      - x1^2*x5 - x1*x2^3*x4 - 3*x1*x2^3 + x1*x2^2*x3 + 2*x1*x2^2*x5 - 3*x1*x2*x3 + x1*x2*x4^2 + x1*x2*x4 + 3*x1*x2
-      + x1*x3^2 + 2*x1*x3*x5 + 3*x1*x4^2 - x1*x4*x5 + 9*x1*x4 + 3*x1 - x2^2*x3*x4 + x2^2*x3*x5 - 3*x2^2*x3 + 2*x2^2*x4
-      + 2*x2^2*x5^2 + 6*x2^2 - x2*x3^2 - x2*x3*x4 - 2*x2*x3*x5 - 2*x2*x3 + 6*x2*x4^2 - 4*x2*x4*x5 + 21*x2*x4 - 4*x2*x5
-      + 9*x2 - 3*x3^2*x4 + x3^2*x5 - 4*x3^2 - 2*x3*x4^2 - 6*x3*x4*x5 - 5*x3*x4 + 2*x3*x5^2 - 2*x3*x5 - 2*x3 - 6*x4^2*x5
-      + 3*x4^2 - 15*x4*x5 + 10*x4 - 4*x5 + 3
-    ]
-    @test __berkowitz_minors(A) == expected_minors
+        # m_3 = det(A[1:3, 1:3])
+        -x1^4 + x1^3*x2*x3 + x1^3*x2*x4 - x1^3*x5 - x1^3 - 2*x1^2*x2*x5 + x1^2*x3^2 + x1^2*x3*x4 + 2*x1^2*x3 - x1^2*x4
+        - x1^2*x5 - x1*x2^3*x4 - 3*x1*x2^3 + x1*x2^2*x3 + 2*x1*x2^2*x5 - 3*x1*x2*x3 + x1*x2*x4^2 + x1*x2*x4 + 3*x1*x2
+        + x1*x3^2 + 2*x1*x3*x5 + 3*x1*x4^2 - x1*x4*x5 + 9*x1*x4 + 3*x1 - x2^2*x3*x4 + x2^2*x3*x5 - 3*x2^2*x3 + 2*x2^2*x4
+        + 2*x2^2*x5^2 + 6*x2^2 - x2*x3^2 - x2*x3*x4 - 2*x2*x3*x5 - 2*x2*x3 + 6*x2*x4^2 - 4*x2*x4*x5 + 21*x2*x4 - 4*x2*x5
+        + 9*x2 - 3*x3^2*x4 + x3^2*x5 - 4*x3^2 - 2*x3*x4^2 - 6*x3*x4*x5 - 5*x3*x4 + 2*x3*x5^2 - 2*x3*x5 - 2*x3 - 6*x4^2*x5
+        + 3*x4^2 - 15*x4*x5 + 10*x4 - 4*x5 + 3
+      ]
+      @test __berkowitz_minors(A) == expected_minors
+    end
+    @testset "__kerber_S_and_H_matrices" begin # This testset is based on Kerber's 2009 paper
+      __kerber_S_matrix = Oscar.__kerber_S_matrix
+      # The following example is based on the discussion below Definition 2.5
+      R, (x,) = polynomial_ring(QQ, [:x])
+      f = 3*x^4 - x^2 + 6*x + 1
+      g = 2*x^2 + 2*x + 3
+
+      expected_H = matrix(QQ, [
+         0   2   2   3;
+         2   2   3   0;
+         6  11 -12  -2;
+        11 -10 -14  -2
+      ])
+      H = Oscar.__kerber_H_matrix(f, g, 1)
+      @test H == expected_H
+
+      # Now we test some S matrices that are constructed from H, see Definition 4.2
+      expected_S_12_H = matrix(QQ, [
+        0   2  -2;
+        2   3  -2;
+        6 -12 -11
+      ])
+      @test __kerber_S_matrix(H, 1, 2) == expected_S_12_H
+
+      expected_S_22_H = matrix(QQ, [
+          2    0   3  -2;
+          2   -2   0  -3;
+         11   -6  -2  12;
+        -10  -11  -2  14
+      ])
+      @test __kerber_S_matrix(H, 2, 2) == expected_S_22_H
+
+      # Small helper
+      function __make_kerber_S(A::MatElem, cols::Vector{Int})
+        d = length(cols)
+        return matrix(QQ, [sign(cols[c]) * A[r, abs(cols[c])] for r in 1:d, c in 1:d])
+      end
+
+      A = matrix(QQ, [10*r + c for r in 1:4, c in 1:4])
+      @test __kerber_S_matrix(A, 1, 4) == __make_kerber_S(A, [1])
+      @test __kerber_S_matrix(A, 2, 4) == __make_kerber_S(A, [2, -1])
+      @test __kerber_S_matrix(A, 3, 4) == __make_kerber_S(A, [3, -1, -2])
+      @test __kerber_S_matrix(A, 4, 4) == __make_kerber_S(A, [4, -1, -2, -3])
+
+      # The following test is based on Example 4.6 in Kerber's 2009 paper
+      R, _ = polynomial_ring(QQ, :x)
+      A = matrix(QQ, [10*r + c for r in 1:9, c in 1:9])
+      expected_cols = [3, -1, -2, 9, -4, -5, -6, -7, -8]
+      @test __kerber_S_matrix(A, 3, 6) == __make_kerber_S(A, expected_cols)
+
+    end # S and H matrices
+  end # kerber helpers
+  @testset "subresultant_prs" begin
+    # Many variables example
+    R, (x, a, b, c, d) = polynomial_ring(QQ, [:x, :a, :b, :c, :d])
+    p = x^5 + (a + b)*x^4 + (c - d)*x^3 + (a*c + 1)*x^2 + (b*d)*x + (a + c)
+    q = (b + 1)*x^4 + (a - c)*x^3 + (c*d)*x^2 + (a - b)*x + 1
+    @test_throws ArgumentError subresultant_prs_ducos(q, p, 1)
+    @test_throws ArgumentError subresultant_prs_kerber(q, p, 1)
+    sprs_d = subresultant_prs_ducos(p, q, 1)
+    sprs_k = subresultant_prs_kerber(p, q, 1)
+    @test sprs_d[1] == p
+    @test sprs_k[1] == p
+    @test sprs_d[2] == q
+    @test sprs_d[2] == q
+    @test sprs_d[end] == resultant(p, q, 1)
+    @test sprs_k[end] == resultant(p, q, 1)
+    @test length(sprs_d) == 6
+    @test length(sprs_k) == 6
+    @test sprs_d == sprs_k
+
+    for i in 2:5
+      @test degree(p, i) == degree(q, i)
+      sprs_d = subresultant_prs_ducos(p, q, i)
+      sprs_k = subresultant_prs_kerber(p, q, i)
+      @test length(sprs_d) == 3
+      @test length(sprs_k) == 3
+      @test sprs_d == sprs_k
+
+      sprs_d_swp = subresultant_prs_ducos(q, p, i)
+      sprs_k_swp = subresultant_prs_kerber(q, p, i)
+
+      @test sprs_d_swp[3] == -sprs_d[3]
+      @test sprs_k_swp[3] == -sprs_k[3]
+      @test sprs_d_swp == sprs_k_swp
+    end
+
+    @testset "rational polyring in two vars" begin
+      R, (x, y) = polynomial_ring(QQ, [:x, :y])
+
+      p = x^4 + y*x + 1
+      q = x^4 + 1
+      sprs_d = subresultant_prs_ducos(p, q, 1)
+      sprs_k = subresultant_prs_kerber(p, q, 1)
+      @test resultant(p, q, 1) == sprs_d[end]
+      @test resultant(p, q, 1) == sprs_k[end]
+      @test sprs_d !== sprs_k
+      @test sprs_d == [p, q, -x*y^3, y^4]
+      @test sprs_k == [p, q, -x*y, 0, -x*y^3, y^4]
+      for i in 0:2
+        @test subresultant_prs(p, q, 1; strategy=i) == sprs_d
+        @test subresultant_prs(p, q, 1; strategy=i) == [p for (k, p) in enumerate(sprs_k) if k <= 2 || degree(p, 1) == degree(q, 1) - k + 2]
+      end
+
+      @test subresultant_prs_ducos(p, q, 1; min_deg=1) == [p, q, -x*y^3]
+      @test subresultant_prs_ducos(p, q, 1; min_deg=2) == [p, q]
+      @test subresultant_prs_ducos(p, q, 1; min_deg=3) == [p, q]
+      @test subresultant_prs_ducos(p, q, 1; min_deg=5) == [p, q] # no effect on p and q
+      @test subresultant_prs_kerber(p, q, 1; s=1) == [p, q, 0, 0, -x*y^3, y^4]
+      @test subresultant_prs_kerber(p, q, 1; s=2) == [p, q, 0, 0, -x*y^3, y^4]
+      @test subresultant_prs_kerber(p, q, 1; s=3) == [p, q, -x*y, 0, -x*y^3, y^4]
+
+      p = x^4 + y
+      q = x^3 + 1
+      res_ducos = subresultant_prs_ducos(p, q, 1)
+      res_kerber = subresultant_prs(p, q, 1; strategy=2)
+      @test res_ducos == res_kerber
+      @test [degree(t, 1) for t in res_ducos] == [4, 3, 1, 0]
+      raw_kerber = subresultant_prs_kerber(p, q, 1)
+      @test degree(raw_kerber[3], 1) != 2 || is_zero(raw_kerber[3])
+
+      # Common factor
+      g = x^2 + y
+      p = g * (x^2 + 2)
+      q = g * (x + y)
+      res_ducos = subresultant_prs_ducos(p, q, 1)
+      res_kerber = subresultant_prs(p, q, 1; strategy=2)
+
+      @test res_ducos == res_kerber
+      @test res_ducos[end] == (y^2 + 2)*g
+
+      @test subresultant_prs_ducos(p, q, 1; min_deg=2) == res_ducos
+      @test subresultant_prs_ducos(p, q, 1; min_deg=3) == [p, q]
+    end
   end
-
 end # all tests
