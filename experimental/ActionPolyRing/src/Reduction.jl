@@ -1035,6 +1035,60 @@ function subresultant_prs_kerber(f::T, g::T, i::Int; s::Int=degree(g, i)) where 
   return res
 end
 
+#=
+function subresultant_prs_kerber(f::T, g::T, i::Int; s::Int=degree(g, i)) where {T <: MPolyRingElem}
+  check_parent(f, g)
+  R = parent(f)
+  n = degree(f, i)
+  m = degree(g, i)
+  m <= 0 && return [f, g]
+  @req s in 1:m "The truncation parameter must lie between 1 and $m"
+
+  H = __kerber_H_matrix(f, g, i)
+
+  stride = m
+  minors_map = Dict{Int, Vector{elem_type(R)}}()
+
+  # Only build and evaluate the matrices needed for the first s coefficients
+  # For t in 0:(s - 1), the needed matrix indices are mod1(k + t, stride)
+  needed_indices = unique([mod1(k + t, stride) for k in (n - m + 1):n for t in 0:min(s - 1, n - k)])
+
+  for j in needed_indices
+    S_j = __kerber_S_matrix(H, j, stride)
+    minors_map[j] = __berkowitz_minors(S_j)
+  end
+
+  res = Vector{T}(undef, m + 2)
+  res[1] = f
+  res[2] = g
+
+  x = gen(R, i)
+  for k in (n - m + 1):n
+    poly = zero(R)
+    max_t = min(s - 1, n - k)
+    for t in 0:max_t
+      j_rep = mod1(k + t, stride)
+      minor_val = minors_map[j_rep][k]
+      if !is_zero(minor_val)
+        poly += minor_val * (x^(n - k - t))
+      end
+    end
+    if k % 4 in (2, 3)
+      poly = -poly
+    end
+    res[k - n + m + 2] = poly
+  end
+
+  return res
+end
+=#
+
+function __subresultant_predict_gcd_deg(p::T, q::T, i::Int) where {T <: MPolyRingElem}
+  m = degree(q, i)
+  m == -1 && return degree(p, i)
+  return m + 2 - findlast(!is_zero, subresultant_prs_kerber(p, q, i; s=1))
+end
+
 # Reference: M. Kerber (2009), Algorithms 3.1 and 3.2
 # This algorithm computes the leading principal minors of the square n-by-n matrix `A`,
 # i.e. it computes [det(A[1:k, 1:k]) for k in 1:n], without any division in the base ring of `A`
