@@ -814,8 +814,8 @@ function subresultant_prs(A::T, B::T, i::Int; strategy::Int=0) where {T <: MPoly
 
   is_zero(B) && return [A, B] # avoid filtering for kerber
 
-  if strategy == 0 # Ducos for univariate/bivariate or high main degree; Kerber for multivariate moderate degree
-    if length(union(vars(A), vars(B))) <= 2 || degree(A, i) >= 15
+  if strategy == 0
+    if length(union(vars(A), vars(B))) <= 3 || degree(A, i) >= 15
       return subresultant_prs_ducos(A, B, i)
     else
       chain = subresultant_prs_kerber(A, B, i)
@@ -1033,6 +1033,12 @@ function subresultant_prs_kerber(f::T, g::T, i::Int; s::Int=degree(g, i)) where 
   end
 
   return res
+end
+
+function __subresultant_predict_gcd_deg(p::T, q::T, i::Int) where {T <: MPolyRingElem}
+  m = degree(q, i)
+  m == -1 && return degree(p, i)
+  return m + 2 - findlast(!is_zero, subresultant_prs_kerber(p, q, i; s=1))
 end
 
 # Reference: M. Kerber (2009), Algorithms 3.1 and 3.2
