@@ -834,7 +834,7 @@ end
 # DOI: https://doi.org/10.1016/S0022-4049(98)00081-4
 function subresultant_prs_ducos(f::T, g::T, v::T; min_deg::Int=0) where {T <: MPolyRingElem}
   check_parent(f, v)
-  return subresultant_prs(f, g, var_index(v); min_deg=min_deg)
+  return subresultant_prs_ducos(f, g, var_index(v); min_deg=min_deg)
 end
 
 @doc raw"""
@@ -895,25 +895,28 @@ function __lazard_se(Sd::T, Sd_1::T, s::T, i::Int) where {T <: MPolyRingElem}
   e = degree(Sd_1, i)
   n = d - e - 1
 
-  n == 0 && return Sd_1
-
-  x = coeff(Sd_1, [i], [e])
-
   # Find the highest power of 2 <= n for the dichotomous powering
   a = 1 << (8 * sizeof(n) - 1 - leading_zeros(n))
-  c = x
   n_rem = n - a
+
+  x = coeff(Sd_1, [i], [e])
+  c = x
+
+  temp = zero(parent(Sd))
 
   while a > 1
     a >>= 1
-    c = divexact(c * c, s)
+    temp = mul!(temp, c, c)
+    c = divexact(temp, s)
     if n_rem >= a
-      c = divexact(c * x, s)
+      temp = mul!(temp, c, x)
+      c = divexact(temp, s)
       n_rem -= a
     end
   end
 
-  return divexact(c * Sd_1, s)
+  temp = mul!(temp, c, Sd_1)
+  return divexact(temp, s)
 end
 
 function __ducos_s_e_minus_1(A::T, B::T, C::T, s::T, i::Int) where {T <: MPolyRingElem}
@@ -923,40 +926,52 @@ function __ducos_s_e_minus_1(A::T, B::T, C::T, s::T, i::Int) where {T <: MPolyRi
 
   d <= 0 && return zero(parent(A))
 
+  v_powers = Vector{T}(undef, d)
+  v_powers[1] = one(parent(A))
+  for j in 1:(d-1)
+    v_powers[j+1] = v_powers[j] * v
+  end
+
   c_d_1 = coeff(B, [i], [e])
   s_e = coeff(C, [i], [degree(C, i)])
 
   D = zero(parent(A))
+  temp = zero(parent(A))
+
   for j in 0:(e-1)
     c_Aj = coeff(A, [i], [j])
     if !is_zero(c_Aj)
-      D += (s_e * c_Aj) * (v^j)
+      temp = mul!(temp, s_e * c_Aj, v_powers[j+1])
+      D = add!(D, D, temp)
     end
   end
 
-  H_curr = (s_e * (v^e)) - C
+  H_curr = (s_e * v_powers[e+1]) - C
 
   c_Ae = coeff(A, [i], [e])
   if !is_zero(c_Ae)
-    D += c_Ae * H_curr
+    temp = mul!(temp, c_Ae, H_curr)
+    D = add!(D, D, temp)
   end
 
   for j in (e+1):(d-1)
-    H_curr = v * H_curr
+    H_curr = mul!(H_curr, H_curr, v)
     cf = coeff(H_curr, [i], [e])
+
     if !is_zero(cf)
-      H_curr -= divexact(cf * B, c_d_1)
+      H_curr = sub!(H_curr, H_curr, divexact(cf * B, c_d_1))
     end
 
     c_Aj = coeff(A, [i], [j])
     if !is_zero(c_Aj)
-      D += c_Aj * H_curr
+      temp = mul!(temp, c_Aj, H_curr)
+      D = add!(D, D, temp)
     end
   end
 
-  D = divexact!(D, coeff(A, [i], [d]))
+  D = divexact(D, coeff(A, [i], [d]))
 
-  H_d = v * H_curr
+  H_d = mul!(H_curr, H_curr, v)
   cf_d = coeff(H_d, [i], [e])
 
   val = divexact(c_d_1 * (H_d + D) - cf_d * B, s)
@@ -981,7 +996,8 @@ Return the subresultant polynomial remainder sequence of `p` and `q` in the `i`-
 their base ring, using an algorithm due to Kerber. This algorithm does not perform any divisions
 in the base ring and is hence preferable for such base rings where divisions are costly, e.g.,
 multivariate polynomial rings in many variables. The returned vector starts with `p` and `q`,
-followed by the regular subresultants in decreasing degree.
+followed by the complete subresultant chain ordered by decreasing subresultant index (which
+may include defective and identically zero polynomials).
 
 # Keyword Arguments
 - `s::Int`: The number of leading terms to compute for each subresultant polynomial (so `p` and `q`
