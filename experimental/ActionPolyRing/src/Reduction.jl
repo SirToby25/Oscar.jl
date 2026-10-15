@@ -969,13 +969,13 @@ end
 # DOI: 10.1080/00207160802460595
 
 # Reference: M. Kerber (2009), Algorithm 4.1 (SubresViaBezout) - the main algorithm
-function subresultant_prs_kerber(f::T, g::T, v::T; s::Int=degree(g, i)) where {T <: MPolyRingElem}
+function subresultant_prs_kerber(f::T, g::T, v::T; s::Int=degree(g, v)) where {T <: MPolyRingElem}
   check_parent(f, v)
   return subresultant_prs_kerber(f, g, var_index(v); s=s)
 end
 
 @doc raw"""
-    subresultant_prs_kerber(p::T, q::T, i::Int; s::Int=degree(g, i)) where {T <: MPolyRingElem} -> Vector{T}
+    subresultant_prs_kerber(p::T, q::T, i::Int; s::Int=degree(q, i)) where {T <: MPolyRingElem} -> Vector{T}
 
 Return the subresultant polynomial remainder sequence of `p` and `q` in the `i`-th variable of
 their base ring, using an algorithm due to Kerber. This algorithm does not perform any divisions
@@ -1002,7 +1002,7 @@ function subresultant_prs_kerber(f::T, g::T, i::Int; s::Int=degree(g, i)) where 
   H = __kerber_H_matrix(f, g, i)
 
   # We store the minors in a dictionary where minors_map[j] = [m_1, ..., m_dim]
-  minors_map = Dict{Int, Vector{elem_type(R)}}()
+  minors_map = Vector{Vector{elem_type(R)}}(undef, s)
 
   for j in 1:s
     S_j = __kerber_S_matrix(H, j, s)
@@ -1190,8 +1190,8 @@ function __kerber_H_matrix(f::T, g::T, i::Int) where {T <: MPolyRingElem}
   n = degree(f, i)
   m = degree(g, i)
 
-  @req n >= m "The degree of the second input in the specified variable is smaller than the degree of the first input"
-  @req m >= 0 "The second polynomial is constant in the specified variable"
+  @req n >= m "The degree of the first input in the specified variable must be greater or than or equal to the degree of the first input"
+  @req m > 0 "The second polynomial must have positive degree in the specified variable"
 
   H = zero_matrix(R, n, n)
 
