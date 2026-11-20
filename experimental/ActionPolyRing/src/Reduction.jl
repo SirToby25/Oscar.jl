@@ -1276,3 +1276,14 @@ function __kerber_S_matrix(A::MatElem{T}, j::Int, s::Int) where {T <: RingElemen
   return S_mat
 end
 
+function __resultant(p::P, q::P, i::Int) where {P <: MPolyRingElem}
+  m = degree(p, i)
+  n = degree(q, i)
+  n == -1 && return zero(q)
+  if m < n
+    return is_even(m * n) ? __resultant(q, p, i) : -__resultant(q, p, i)
+  end
+  sprs = subresultant_prs_ducos(p, q, i)
+  return length(sprs) == n + 2 ? sprs[n + 2] : zero(q)
+end
+
